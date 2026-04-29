@@ -1,0 +1,132 @@
+:root {
+  color-scheme: light;
+  --bg-strong: #14263d;
+  --bg-deep: #213653;
+  --bg-soft: #f4f5f1;
+  --surface: rgba(255, 255, 255, 0.9);
+  --surface-strong: #ffffff;
+  --surface-dark: rgba(30, 46, 68, 0.94);
+  --line: rgba(110, 124, 147, 0.18);
+  --line-strong: rgba(110, 124, 147, 0.3);
+  --text-strong: #21324a;
+  --text-main: #42566f;
+  --text-muted: #78879a;
+  --brand: #42679a;
+  --brand-strong: #355784;
+  --brand-soft: rgba(66, 103, 154, 0.1);
+  --teal: #6f958f;
+  --teal-soft: rgba(111, 149, 143, 0.12);
+  --warm: #c9a76a;
+  --warm-soft: rgba(201, 167, 106, 0.16);
+  --success: #0f9f6e;
+  --success-soft: rgba(15, 159, 110, 0.14);
+  --shadow-lg: 0 14px 34px rgba(24, 35, 53, 0.05);
+  --shadow-md: 0 5px 16px rgba(24, 35, 53, 0.04);
+  --radius-2xl: 28px;
+  --radius-xl: 22px;
+  --radius-lg: 18px;
+  --radius-md: 14px;
+  --max-width: 1160px;
+  --page-gap: 1.35rem;
+  --section-padding: 1.65rem;
+  --page-bottom: 3rem;
+  --icon-size-md: 2.15rem;
+  --icon-size-sm: 1.9rem;
+  --icon-radius: 999px;
+  --icon-soft-bg: rgba(66, 103, 154, 0.08);
+  --icon-soft-line: rgba(66, 103, 154, 0.12);
+  font-family: 'Source Han Serif SC', 'Noto Serif SC', 'PingFang SC', 'Microsoft YaHei', serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  color: var(--text-main);
+  background:
+    linear-gradient(180deg, #faf9f4 0%, #f4f5f1 48%, #f8f7f3 100%);
+}
+
+#app {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: rgba(66, 103, 154, 0.16);
+  color: var(--text-strong);
+}
+
+.page-shell {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--page-gap);
+  padding-bottom: var(--page-bottom);
+}
+
+.page-section {
+  padding: var(--section-padding);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: none;
+}
+
+.page-head {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.page-eyebrow {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brand-strong);
+}
+
+.page-title {
+  margin: 0;
+  font-size: clamp(1.55rem, 3.2vw, 2.15rem);
+  line-height: 1.2;
+  color: var(--text-strong);
+}
+
+.page-desc {
+  margin: 0;
+  line-height: 1.75;
+  color: var(--text-muted);
+}
+
+.quiet-card {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: none;
+}
