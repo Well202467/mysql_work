@@ -17,7 +17,7 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public List<KnowledgePoint> getKnowledgePointsByCourseId(Long courseId) {
+    public List<KnowledgePoint> getKnowledgePointsByCourseId(String courseId) {
         return courseMapper.selectKnowledgePointsByCourseId(courseId);
     }
 }

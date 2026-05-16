@@ -10,7 +10,7 @@ public interface MajorMapper {
 
     List<Major> selectAll();
 
-    Major selectById(@Param("id") Long id);
+    Major selectById(@Param("id") String id);
 
-    List<MajorCourseVO> selectCoursesByMajorId(@Param("majorId") Long majorId);
+    List<MajorCourseVO> selectCoursesByMajorId(@Param("majorId") String majorId);
 }

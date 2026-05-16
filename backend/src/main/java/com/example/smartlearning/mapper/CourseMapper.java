@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface CourseMapper {
 
-    List<KnowledgePoint> selectKnowledgePointsByCourseId(@Param("courseId") Long courseId);
+    List<KnowledgePoint> selectKnowledgePointsByCourseId(@Param("courseId") String courseId);
 }

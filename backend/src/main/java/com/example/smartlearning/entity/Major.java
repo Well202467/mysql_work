@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Data
 public class Major {
 
-    private Long id;
+    private String id;
     private String name;
     private String description;
     private LocalDateTime createdAt;

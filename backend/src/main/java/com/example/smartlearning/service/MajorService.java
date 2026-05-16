@@ -9,7 +9,7 @@ public interface MajorService {
 
     List<Major> getMajorList();
 
-    Major getMajorById(Long id);
+    Major getMajorById(String id);
 
-    List<MajorCourseVO> getCoursesByMajorId(Long majorId);
+    List<MajorCourseVO> getCoursesByMajorId(String majorId);
 }

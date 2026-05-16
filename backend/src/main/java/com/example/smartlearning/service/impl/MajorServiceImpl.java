@@ -23,12 +23,12 @@ public class MajorServiceImpl implements MajorService {
     }
 
     @Override
-    public Major getMajorById(Long id) {
+    public Major getMajorById(String id) {
         return majorMapper.selectById(id);
     }
 
     @Override
-    public List<MajorCourseVO> getCoursesByMajorId(Long majorId) {
+    public List<MajorCourseVO> getCoursesByMajorId(String majorId) {
         return majorMapper.selectCoursesByMajorId(majorId);
     }
 }

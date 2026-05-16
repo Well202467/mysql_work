@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 public class MajorCourse {
 
     private Long id;
-    private Long majorId;
-    private Long courseId;
+    private String majorId;
+    private String courseId;
     private String type;
     private BigDecimal credits;
     private LocalDateTime createdAt;

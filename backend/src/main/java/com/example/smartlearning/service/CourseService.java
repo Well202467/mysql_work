@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface CourseService {
 
-    List<KnowledgePoint> getKnowledgePointsByCourseId(Long courseId);
+    List<KnowledgePoint> getKnowledgePointsByCourseId(String courseId);
 }

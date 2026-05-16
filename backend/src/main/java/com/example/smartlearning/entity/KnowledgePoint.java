@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 public class KnowledgePoint {
 
     private Long id;
-    private Long courseId;
+    private String courseId;
     private String name;
     private String description;
     private String difficulty;
