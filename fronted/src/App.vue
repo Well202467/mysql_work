@@ -14,11 +14,12 @@ const navItems = [
 
 const currentLabel = computed(() => route.meta?.title ?? '知点智学')
 const currentIcon = computed(() => navItems.find((item) => item.name === route.name)?.icon ?? 'major')
+const isAdminPage = computed(() => Boolean(route.meta?.adminPage))
 </script>
 
 <template>
   <div class="layout">
-    <header class="topbar">
+    <header v-if="!isAdminPage" class="topbar">
       <div class="topbar__inner">
         <RouterLink class="brand" :to="{ name: 'home' }">
           <span class="brand__mark" aria-hidden="true">
@@ -51,7 +52,7 @@ const currentIcon = computed(() => navItems.find((item) => item.name === route.n
       </div>
     </header>
 
-    <main class="main">
+    <main class="main" :class="{ 'main--admin': isAdminPage }">
       <RouterView />
     </main>
   </div>
@@ -176,6 +177,10 @@ const currentIcon = computed(() => navItems.find((item) => item.name === route.n
 
 .main {
   padding: 1.15rem 1rem 2.8rem;
+}
+
+.main--admin {
+  padding: 0;
 }
 
 @media (max-width: 1040px) {

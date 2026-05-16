@@ -24,4 +24,8 @@ public class ApiResponse<T> {
     public static ApiResponse<Void> error(String message) {
         return new ApiResponse<>(500, message, null);
     }
+
+    public static <T> ApiResponse<T> unauthorized(String message) {
+        return new ApiResponse<>(401, message, null);
+    }
 }
