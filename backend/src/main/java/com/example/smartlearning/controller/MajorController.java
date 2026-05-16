@@ -4,6 +4,8 @@ import com.example.smartlearning.common.ApiResponse;
 import com.example.smartlearning.entity.Major;
 import com.example.smartlearning.service.MajorService;
 import com.example.smartlearning.vo.MajorCourseVO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/majors")
+@Tag(name = "主修")
 public class MajorController {
 
     private final MajorService majorService;
@@ -29,12 +32,14 @@ public class MajorController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "获得专业ID")
     public ApiResponse<?> getMajorById(@PathVariable String id) {
         Major major = majorService.getMajorById(id);
         return ApiResponse.success(major == null ? Collections.emptyList() : major);
     }
 
     @GetMapping("/{id}/courses")
+    @Operation(summary = "获得专业id获取课程")
     public ApiResponse<List<MajorCourseVO>> getCoursesByMajorId(@PathVariable String id) {
         List<MajorCourseVO> courses = majorService.getCoursesByMajorId(id);
         return ApiResponse.success(courses == null ? Collections.emptyList() : courses);

@@ -9,7 +9,7 @@ public class Major {
 
     private String id;
     private String name;
-    private String description;
+    private String intro;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
