@@ -8,11 +8,12 @@ const route = useRoute()
 const navItems = [
   { name: 'home', label: '知点序章', icon: 'home' },
   { name: 'majors', label: '学科览要', icon: 'majors' },
-  { name: 'resources', label: '博习斋', icon: 'resources' },
+  { name: 'careers', label: '职业方向', icon: 'job' },
 ]
 
+const currentNavName = computed(() => route.meta?.navName ?? route.name)
 const currentLabel = computed(() => route.meta?.title ?? '知点智学')
-const currentIcon = computed(() => navItems.find((item) => item.name === route.name)?.icon ?? 'major')
+const currentIcon = computed(() => navItems.find((item) => item.name === currentNavName.value)?.icon ?? 'major')
 const isAdminPage = computed(() => Boolean(route.meta?.adminPage))
 </script>
 
@@ -36,7 +37,7 @@ const isAdminPage = computed(() => Boolean(route.meta?.adminPage))
             v-for="item in navItems"
             :key="item.name"
             class="topbar__link"
-            :class="{ 'topbar__link--active': route.name === item.name }"
+            :class="{ 'topbar__link--active': currentNavName === item.name }"
             :to="{ name: item.name }"
           >
             <AppIcon :name="item.icon" :size="16" />

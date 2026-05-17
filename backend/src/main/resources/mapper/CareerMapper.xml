@@ -44,6 +44,23 @@
         ORDER BY cc.is_core DESC, cc.learning_stage, cc.id
     </select>
 
+    <select id="selectCareersByCourseId" resultType="com.example.smartlearning.vo.CourseCareerVO">
+        SELECT
+            c.id AS career_id,
+            c.name AS career_name,
+            c.category,
+            cc.course_role,
+            cc.related_ability,
+            cc.related_points,
+            cc.importance,
+            cc.is_core,
+            cc.learning_stage
+        FROM career_course cc
+        JOIN career c ON cc.career_id = c.id
+        WHERE cc.course_id = #{courseId}
+        ORDER BY cc.is_core DESC, cc.learning_stage, cc.id
+    </select>
+
     <select id="selectAbilitiesByCareerId" resultType="com.example.smartlearning.vo.CareerAbilityVO">
         SELECT
             id,

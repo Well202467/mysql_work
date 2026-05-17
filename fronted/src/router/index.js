@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import MajorCatalogView from '../views/MajorCatalogView.vue'
-import ResourceLibraryView from '../views/ResourceLibraryView.vue'
+import CareerCatalogView from '../views/CareerCatalogView.vue'
+import CareerDetailView from '../views/CareerDetailView.vue'
 import MajorView from '../views/MajorView.vue'
 import AdminLogin from '../views/admin/AdminLogin.vue'
 import AdminLayout from '../views/admin/AdminLayout.vue'
@@ -30,10 +31,16 @@ const routes = [
     meta: { title: '学科览要' },
   },
   {
-    path: '/resources',
-    name: 'resources',
-    component: ResourceLibraryView,
-    meta: { title: '博习斋' },
+    path: '/careers',
+    name: 'careers',
+    component: CareerCatalogView,
+    meta: { title: '职业方向' },
+  },
+  {
+    path: '/careers/:id',
+    name: 'career-detail',
+    component: CareerDetailView,
+    meta: { title: '职业详情', navName: 'careers' },
   },
   {
     path: '/major/:id',

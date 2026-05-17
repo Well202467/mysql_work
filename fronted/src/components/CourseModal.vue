@@ -10,16 +10,16 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  careers: {
+    type: Array,
+    default: () => [],
+  },
 })
 
-const emit = defineEmits(['close', 'view-job'])
+const emit = defineEmits(['close', 'view-career', 'view-job'])
 
 function close() {
   emit('close')
-}
-
-function viewJob(jobName) {
-  emit('view-job', jobName)
 }
 
 function onKeydown(event) {
@@ -29,21 +29,32 @@ function onKeydown(event) {
   }
 }
 
-function normalizeList(value) {
-  if (value == null) return []
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item).trim()).filter(Boolean)
-  }
-  const text = String(value).trim()
-  return text ? [text] : []
-}
-
 function toText(value) {
   return String(value ?? '').trim()
 }
 
 function uniqueList(items) {
   return Array.from(new Set(items.filter(Boolean)))
+}
+
+function normalizeCareer(career, index) {
+  const source = career && typeof career === 'object' ? career : {}
+  const id = toText(source.careerId ?? source.id)
+  const name = toText(source.careerName ?? source.name) || '未命名职业'
+
+  return {
+    ...source,
+    id,
+    key: id || `${name}-${index}`,
+    name,
+    category: toText(source.category) || '未分类',
+    courseRole: toText(source.courseRole),
+  }
+}
+
+function viewCareer(career) {
+  if (!career.id) return
+  emit('view-career', { ...career, careerId: career.id })
 }
 
 onMounted(() => {
@@ -59,6 +70,11 @@ const typeLabel = computed(() => String(props.course?.type ?? '未分类').trim(
 const duration = computed(() => String(props.course?.credits ?? props.course?.duration ?? '2 学分').trim())
 const description = computed(() => String(props.course?.description ?? '').trim() || '暂无说明')
 const goals = computed(() => uniqueList(props.knowledgePoints.map((item) => toText(item?.ability))))
+const relatedCareers = computed(() =>
+  props.careers
+    .map((item, index) => normalizeCareer(item, index))
+    .filter((item) => item.id || item.name || item.category || item.courseRole),
+)
 const points = computed(() =>
   props.knowledgePoints
     .map((item) => {
@@ -69,9 +85,6 @@ const points = computed(() =>
     })
     .filter(Boolean),
 )
-const jobs = computed(() => normalizeList(props.course?.jobs))
-const interaction = computed(() => String(props.course?.interaction ?? '').trim() || '可结合课程案例与练习任务循序查阅。')
-const aiHint = computed(() => String(props.course?.aiHint ?? props.course?.jobExplanation ?? '').trim() || '可结合当前学习阶段，回看相关课程与练习内容。')
 </script>
 
 <template>
@@ -121,24 +134,23 @@ const aiHint = computed(() => String(props.course?.aiHint ?? props.course?.jobEx
 
           <section class="field">
             <h3 class="label">关联岗位</h3>
-            <p v-if="jobs.length === 0" class="muted">暂无岗位映射</p>
-            <ul v-else class="tag-list" aria-label="关联岗位">
-              <li v-for="(item, index) in jobs" :key="`job-${index}`">
-                <button type="button" class="tag tag--job tag--button" @click="viewJob(item)">
-                  {{ item }}
-                </button>
-              </li>
-            </ul>
-          </section>
-
-          <section class="field">
-            <h3 class="label">推荐学习建议</h3>
-            <p class="value value--multiline">{{ interaction }}</p>
-          </section>
-
-          <section class="field field--coach">
-            <h3 class="label">AI 提示</h3>
-            <p class="value value--multiline">{{ aiHint }}</p>
+            <p v-if="relatedCareers.length === 0" class="muted">暂无岗位映射</p>
+            <div v-else class="career-list" aria-label="关联岗位">
+              <button
+                v-for="career in relatedCareers"
+                :key="career.key"
+                type="button"
+                class="career-card"
+                :disabled="!career.id"
+                @click="viewCareer(career)"
+              >
+                <span class="career-card__main">
+                  <span class="career-card__name">{{ career.name }}</span>
+                  <span class="career-card__category">{{ career.category }}</span>
+                </span>
+                <span v-if="career.courseRole" class="career-card__role">课程作用：{{ career.courseRole }}</span>
+              </button>
+            </div>
           </section>
         </div>
       </div>
@@ -254,10 +266,6 @@ const aiHint = computed(() => String(props.course?.aiHint ?? props.course?.jobEx
   margin-bottom: 0;
 }
 
-.field--coach {
-  background: linear-gradient(135deg, rgba(38, 103, 255, 0.09) 0%, rgba(14, 165, 183, 0.08) 100%);
-}
-
 .label {
   margin: 0 0 0.65rem;
   font-size: 0.82rem;
@@ -306,17 +314,6 @@ const aiHint = computed(() => String(props.course?.aiHint ?? props.course?.jobEx
   font-weight: 600;
 }
 
-.tag--button {
-  border-width: 1px;
-  cursor: pointer;
-}
-
-.tag--job {
-  background: rgba(255, 178, 77, 0.14);
-  color: #9a5e0e;
-  border-color: rgba(255, 178, 77, 0.18);
-}
-
 .point-list {
   list-style: none;
   margin: 0;
@@ -342,6 +339,65 @@ const aiHint = computed(() => String(props.course?.aiHint ?? props.course?.jobEx
   background: linear-gradient(135deg, var(--brand) 0%, var(--teal) 100%);
 }
 
+.career-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.career-card {
+  display: grid;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.82);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.career-card:disabled {
+  cursor: default;
+}
+
+.career-card:not(:disabled):hover {
+  border-color: rgba(66, 103, 154, 0.28);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.career-card__main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.career-card__name {
+  color: var(--text-strong);
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.career-card__category {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  padding: 0.32rem 0.62rem;
+  border-radius: 999px;
+  background: rgba(255, 178, 77, 0.16);
+  color: #9a5e0e;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.career-card__role {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
 @media (max-width: 640px) {
   .modal-header,
   .modal-body {
@@ -351,6 +407,11 @@ const aiHint = computed(() => String(props.course?.aiHint ?? props.course?.jobEx
 
   .modal-dialog {
     border-radius: 22px;
+  }
+
+  .career-card__main {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>
