@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import MajorCatalogView from '../views/MajorCatalogView.vue'
-import RelationMapView from '../views/RelationMapView.vue'
 import ResourceLibraryView from '../views/ResourceLibraryView.vue'
 import MajorView from '../views/MajorView.vue'
 import AdminLogin from '../views/admin/AdminLogin.vue'
@@ -29,12 +28,6 @@ const routes = [
     name: 'majors',
     component: MajorCatalogView,
     meta: { title: '学科览要' },
-  },
-  {
-    path: '/map',
-    name: 'map',
-    component: RelationMapView,
-    meta: { title: '学职图谱' },
   },
   {
     path: '/resources',

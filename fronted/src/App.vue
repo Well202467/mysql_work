@@ -8,7 +8,6 @@ const route = useRoute()
 const navItems = [
   { name: 'home', label: '知点序章', icon: 'home' },
   { name: 'majors', label: '学科览要', icon: 'majors' },
-  { name: 'map', label: '学职图谱', icon: 'map' },
   { name: 'resources', label: '博习斋', icon: 'resources' },
 ]
 
