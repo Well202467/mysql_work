@@ -12,8 +12,8 @@ public class OpenApiConfig {
     public OpenAPI smartLearningOpenApi() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Smart Learning Backend API")
-                        .description("Major, course, and knowledge point query APIs")
+                        .title("智慧学习平台后端接口文档")
+                        .description("专业、课程、职业和管理员后台管理相关接口")
                         .version("1.0.0"));
     }
 }

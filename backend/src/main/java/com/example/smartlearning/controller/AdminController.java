@@ -2,6 +2,8 @@ package com.example.smartlearning.controller;
 
 import com.example.smartlearning.common.ApiResponse;
 import com.example.smartlearning.dto.AdminLoginDTO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
+@Tag(name = "管理员登录接口")
 public class AdminController {
 
     private static final String ADMIN_USERNAME = "admin";
@@ -20,6 +23,7 @@ public class AdminController {
     private static final String ADMIN_TOKEN = "admin-token";
 
     @PostMapping("/login")
+    @Operation(summary = "管理员登录")
     public ResponseEntity<ApiResponse<?>> login(@RequestBody AdminLoginDTO loginDTO) {
         if (loginDTO != null
                 && ADMIN_USERNAME.equals(loginDTO.getUsername())

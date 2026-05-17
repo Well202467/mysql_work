@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/courses")
-@Tag(name = "课程")
+@Tag(name = "课程查询接口")
 public class CourseController {
 
     private final CourseService courseService;
@@ -24,7 +24,7 @@ public class CourseController {
         this.courseService = courseService;
     }
 
-    @Operation(summary = "关键知识点")
+    @Operation(summary = "根据课程ID查询知识点列表")
     @GetMapping("/{id}/knowledge-points")
     public ApiResponse<List<KnowledgePoint>> getKnowledgePointsByCourseId(@PathVariable String id) {
         List<KnowledgePoint> points = courseService.getKnowledgePointsByCourseId(id);
