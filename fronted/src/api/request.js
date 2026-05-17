@@ -14,4 +14,19 @@ request.interceptors.request.use((config) => {
   return config
 })
 
+request.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    if (!error.response) {
+      error.response = { data: { message: '操作失败' } }
+    } else if (!error.response.data?.message) {
+      error.response.data = {
+        ...(error.response.data || {}),
+        message: '操作失败',
+      }
+    }
+    return Promise.reject(error)
+  },
+)
+
 export default request

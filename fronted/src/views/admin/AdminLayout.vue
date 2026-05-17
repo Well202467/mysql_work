@@ -6,7 +6,15 @@ const router = useRouter()
 
 const navItems = [
   { name: 'admin-dashboard', label: '后台首页', icon: 'home' },
+  { name: 'admin-majors', label: '专业管理', icon: 'major' },
   { name: 'admin-courses', label: '课程管理', icon: 'course' },
+  { name: 'admin-major-courses', label: '专业课程关系', icon: 'map' },
+  { name: 'admin-knowledge-points', label: '知识点管理', icon: 'ability' },
+  { name: 'admin-careers', label: '职业管理', icon: 'job' },
+  { name: 'admin-career-profiles', label: '职业画像管理', icon: 'intro' },
+  { name: 'admin-career-abilities', label: '职业能力管理', icon: 'focus' },
+  { name: 'admin-career-courses', label: '职业课程关系', icon: 'course' },
+  { name: 'admin-career-knowledge-points', label: '职业知识点关系', icon: 'ability' },
 ]
 
 function logout() {

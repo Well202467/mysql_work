@@ -2,10 +2,15 @@
 import { computed } from 'vue'
 
 const entries = [
+  { label: '专业管理', routeName: 'admin-majors', available: true },
   { label: '课程管理', routeName: 'admin-courses', available: true },
-  { label: '职业管理', available: false },
-  { label: '知识点管理', available: false },
-  { label: '专业管理', available: false },
+  { label: '专业课程关系管理', routeName: 'admin-major-courses', available: true },
+  { label: '知识点管理', routeName: 'admin-knowledge-points', available: true },
+  { label: '职业管理', routeName: 'admin-careers', available: true },
+  { label: '职业画像管理', routeName: 'admin-career-profiles', available: true },
+  { label: '职业能力管理', routeName: 'admin-career-abilities', available: true },
+  { label: '职业课程关系', routeName: 'admin-career-courses', available: true },
+  { label: '职业知识点关系', routeName: 'admin-career-knowledge-points', available: true },
 ]
 
 const availableEntries = computed(() => entries.filter((item) => item.available))

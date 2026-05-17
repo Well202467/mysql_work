@@ -18,17 +18,17 @@ async function handleLogin() {
   errorMessage.value = ''
   loading.value = true
   try {
-    const response = await adminLogin({
+    const res = await adminLogin({
       username: form.username.trim(),
       password: form.password,
     })
-    const token = response.data?.data?.token
-    if (response.data?.code === 200 && token) {
+    const token = res?.data?.token
+    if (res?.code === 200 && token) {
       localStorage.setItem('adminToken', token)
       await router.push(String(route.query.redirect || '/admin/dashboard'))
       return
     }
-    errorMessage.value = response.data?.message || '登录失败'
+    errorMessage.value = res?.message || '登录失败'
   } catch (error) {
     errorMessage.value = error?.response?.data?.message || '用户名或密码错误'
   } finally {

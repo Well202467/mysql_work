@@ -7,7 +7,15 @@ import MajorView from '../views/MajorView.vue'
 import AdminLogin from '../views/admin/AdminLogin.vue'
 import AdminLayout from '../views/admin/AdminLayout.vue'
 import AdminDashboard from '../views/admin/AdminDashboard.vue'
+import AdminMajorManage from '../views/admin/AdminMajorManage.vue'
 import AdminCourseManage from '../views/admin/AdminCourseManage.vue'
+import AdminMajorCourseManage from '../views/admin/AdminMajorCourseManage.vue'
+import AdminKnowledgePointManage from '../views/admin/AdminKnowledgePointManage.vue'
+import AdminCareerManage from '../views/admin/AdminCareerManage.vue'
+import AdminCareerProfileManage from '../views/admin/AdminCareerProfileManage.vue'
+import AdminCareerAbilityManage from '../views/admin/AdminCareerAbilityManage.vue'
+import AdminCareerCourseManage from '../views/admin/AdminCareerCourseManage.vue'
+import AdminCareerKnowledgePointManage from '../views/admin/AdminCareerKnowledgePointManage.vue'
 
 const routes = [
   {
@@ -66,6 +74,54 @@ const routes = [
         name: 'admin-courses',
         component: AdminCourseManage,
         meta: { title: '课程管理', adminPage: true, requiresAdmin: true },
+      },
+      {
+        path: 'majors',
+        name: 'admin-majors',
+        component: AdminMajorManage,
+        meta: { title: '专业管理', adminPage: true, requiresAdmin: true },
+      },
+      {
+        path: 'major-courses',
+        name: 'admin-major-courses',
+        component: AdminMajorCourseManage,
+        meta: { title: '专业课程关系管理', adminPage: true, requiresAdmin: true },
+      },
+      {
+        path: 'knowledge-points',
+        name: 'admin-knowledge-points',
+        component: AdminKnowledgePointManage,
+        meta: { title: '知识点管理', adminPage: true, requiresAdmin: true },
+      },
+      {
+        path: 'careers',
+        name: 'admin-careers',
+        component: AdminCareerManage,
+        meta: { title: '职业管理', adminPage: true, requiresAdmin: true },
+      },
+      {
+        path: 'career-profiles',
+        name: 'admin-career-profiles',
+        component: AdminCareerProfileManage,
+        meta: { title: '职业画像管理', adminPage: true, requiresAdmin: true },
+      },
+      {
+        path: 'career-abilities',
+        name: 'admin-career-abilities',
+        component: AdminCareerAbilityManage,
+        meta: { title: '职业能力管理', adminPage: true, requiresAdmin: true },
+      },
+      {
+        path: 'career-courses',
+        name: 'admin-career-courses',
+        component: AdminCareerCourseManage,
+        meta: { title: '职业课程关系', adminPage: true, requiresAdmin: true },
+      },
+      {
+        path: 'career-knowledge-points',
+        name: 'admin-career-knowledge-points',
+        component: AdminCareerKnowledgePointManage,
+        meta: { title: '职业知识点关系', adminPage: true, requiresAdmin: true },
       },
     ],
   },

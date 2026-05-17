@@ -14,8 +14,6 @@ const form = reactive({
   id: '',
   name: '',
   description: '',
-  type: '',
-  credits: '',
 })
 
 const formTitle = computed(() => (editingId.value ? '编辑课程' : '新增课程'))
@@ -26,9 +24,15 @@ async function loadCourses() {
   loading.value = true
   errorMessage.value = ''
   try {
-    courses.value = await getCourses()
+    const res = await getCourses()
+    if (!isBusinessSuccess(res)) {
+      courses.value = []
+      errorMessage.value = getBusinessMessage(res)
+      return
+    }
+    courses.value = Array.isArray(res.data) ? res.data : []
   } catch (error) {
-    errorMessage.value = error?.response?.data?.message || '课程列表加载失败'
+    errorMessage.value = getErrorMessage(error, '课程列表加载失败')
   } finally {
     loading.value = false
   }
@@ -40,8 +44,6 @@ function openCreateForm() {
     id: '',
     name: '',
     description: '',
-    type: '',
-    credits: '',
   })
   showForm.value = true
 }
@@ -52,14 +54,24 @@ function openEditForm(course) {
     id: course.id ?? '',
     name: course.name ?? '',
     description: course.description ?? '',
-    type: course.type ?? '',
-    credits: course.credits ?? '',
   })
   showForm.value = true
 }
 
 function closeForm() {
   showForm.value = false
+}
+
+function isBusinessSuccess(res) {
+  return res?.code === 200
+}
+
+function getBusinessMessage(res) {
+  return res?.message || '操作失败'
+}
+
+function getErrorMessage(error, fallback = '操作失败') {
+  return error?.response?.data?.message || fallback
 }
 
 async function saveCourse() {
@@ -70,22 +82,20 @@ async function saveCourse() {
     id: form.id.trim(),
     name: form.name.trim(),
     description: form.description.trim(),
-    type: form.type.trim(),
-    credits: form.credits,
   }
 
   try {
-    if (editingId.value) {
-      await updateCourse(editingId.value, payload)
-      successMessage.value = '课程已更新'
-    } else {
-      await addCourse(payload)
-      successMessage.value = '课程已新增'
+    const res = editingId.value ? await updateCourse(editingId.value, payload) : await addCourse(payload)
+    if (!isBusinessSuccess(res)) {
+      errorMessage.value = getBusinessMessage(res)
+      return
     }
+
+    successMessage.value = editingId.value ? '课程已修改' : '课程已新增'
     showForm.value = false
     await loadCourses()
   } catch (error) {
-    errorMessage.value = error?.response?.data?.message || '保存失败，请确认后端已补充课程增删改接口'
+    errorMessage.value = getErrorMessage(error, '保存失败')
   } finally {
     saving.value = false
   }
@@ -96,11 +106,16 @@ async function handleDelete(course) {
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await deleteCourse(course.id)
+    const res = await deleteCourse(course.id)
+    if (!isBusinessSuccess(res)) {
+      errorMessage.value = getBusinessMessage(res)
+      return
+    }
+
     successMessage.value = '课程已删除'
     await loadCourses()
   } catch (error) {
-    errorMessage.value = error?.response?.data?.message || '删除失败，请确认后端已补充课程删除接口'
+    errorMessage.value = getErrorMessage(error, '删除失败')
   }
 }
 </script>
@@ -110,7 +125,7 @@ async function handleDelete(course) {
     <div class="manage-head">
       <div>
         <h2>课程管理</h2>
-        <p>课程列表优先读取后台接口，后台接口未补充时读取已有专业课程数据。</p>
+        <p>这里只维护 course 表中的课程基础信息，课程类型和学分请到专业课程关系管理中维护。</p>
       </div>
       <button type="button" class="primary-button" @click="openCreateForm">新增课程</button>
     </div>
@@ -125,8 +140,6 @@ async function handleDelete(course) {
           <tr>
             <th>课程 ID</th>
             <th>课程名称</th>
-            <th>类型</th>
-            <th>学分</th>
             <th>简介</th>
             <th>操作</th>
           </tr>
@@ -135,8 +148,6 @@ async function handleDelete(course) {
           <tr v-for="course in courses" :key="course.id">
             <td>{{ course.id }}</td>
             <td>{{ course.name }}</td>
-            <td>{{ course.type || '未分类' }}</td>
-            <td>{{ course.credits || '-' }}</td>
             <td class="course-desc">{{ course.description || '暂无简介' }}</td>
             <td>
               <div class="row-actions">
@@ -165,14 +176,6 @@ async function handleDelete(course) {
           <label class="field">
             <span>课程名称</span>
             <input v-model="form.name" type="text" required />
-          </label>
-          <label class="field">
-            <span>类型</span>
-            <input v-model="form.type" type="text" />
-          </label>
-          <label class="field">
-            <span>学分</span>
-            <input v-model="form.credits" type="text" />
           </label>
           <label class="field field--wide">
             <span>简介</span>
@@ -282,7 +285,7 @@ async function handleDelete(course) {
 
 .course-table {
   width: 100%;
-  min-width: 860px;
+  min-width: 720px;
   border-collapse: collapse;
 }
 
@@ -306,7 +309,7 @@ async function handleDelete(course) {
 }
 
 .course-desc {
-  max-width: 28rem;
+  max-width: 34rem;
 }
 
 .row-actions {
