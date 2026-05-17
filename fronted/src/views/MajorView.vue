@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { getCourseKnowledgePoints } from '../api/courses.js'
 import request from '../api/request.js'
 import { getJobProfileByName } from '../data/majors.js'
 import CourseModal from '../components/CourseModal.vue'
@@ -16,10 +17,12 @@ const loadError = ref('')
 const showModal = ref(false)
 const showJobModal = ref(false)
 const selectedCourse = ref(null)
+const selectedCourseKnowledgePoints = ref([])
 const selectedJob = ref(null)
 const searchQuery = ref('')
 const typeFilter = ref('all')
 let loadVersion = 0
+let knowledgePointLoadVersion = 0
 
 watch(
   () => route.params.id,
@@ -31,6 +34,7 @@ watch(
     showModal.value = false
     showJobModal.value = false
     selectedCourse.value = null
+    selectedCourseKnowledgePoints.value = []
     selectedJob.value = null
     searchQuery.value = ''
     typeFilter.value = 'all'
@@ -178,6 +182,21 @@ function normalizeCourse(course, index) {
   }
 }
 
+function normalizeKnowledgePoints(value) {
+  return value
+    .map((item) => {
+      const source = item && typeof item === 'object' ? item : {}
+      return {
+        ...source,
+        id: source.id,
+        name: toText(source.name),
+        description: toText(source.description),
+        ability: toText(source.ability),
+      }
+    })
+    .filter((item) => item.name || item.description || item.ability)
+}
+
 function normalizeMetrics(value) {
   if (!Array.isArray(value)) return []
 
@@ -268,14 +287,31 @@ const filteredCourses = computed(() => {
   return list
 })
 
-function openCourse(course) {
+async function openCourse(course) {
+  const currentVersion = ++knowledgePointLoadVersion
   selectedCourse.value = course
+  selectedCourseKnowledgePoints.value = []
   showModal.value = true
+
+  const courseId = toText(course?.id)
+  if (!courseId) return
+
+  try {
+    const response = await getCourseKnowledgePoints(courseId)
+    if (currentVersion !== knowledgePointLoadVersion) return
+    selectedCourseKnowledgePoints.value = normalizeKnowledgePoints(extractArrayData(response))
+  } catch (error) {
+    if (currentVersion !== knowledgePointLoadVersion) return
+    console.error('获取课程知识点失败', error)
+    selectedCourseKnowledgePoints.value = []
+  }
 }
 
 function closeModal() {
+  knowledgePointLoadVersion += 1
   showModal.value = false
   selectedCourse.value = null
+  selectedCourseKnowledgePoints.value = []
 }
 
 function openJobByName(name) {
@@ -529,6 +565,7 @@ function handleViewJob(name) {
     <CourseModal
       v-if="showModal && selectedCourse"
       :course="selectedCourse"
+      :knowledge-points="selectedCourseKnowledgePoints"
       @close="closeModal"
       @view-job="handleViewJob"
     />

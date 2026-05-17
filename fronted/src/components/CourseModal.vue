@@ -6,6 +6,10 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  knowledgePoints: {
+    type: Array,
+    default: () => [],
+  },
 })
 
 const emit = defineEmits(['close', 'view-job'])
@@ -34,6 +38,14 @@ function normalizeList(value) {
   return text ? [text] : []
 }
 
+function toText(value) {
+  return String(value ?? '').trim()
+}
+
+function uniqueList(items) {
+  return Array.from(new Set(items.filter(Boolean)))
+}
+
 onMounted(() => {
   document.addEventListener('keydown', onKeydown)
 })
@@ -46,8 +58,17 @@ const title = computed(() => props.course?.name?.trim() || '未命名课程')
 const typeLabel = computed(() => String(props.course?.type ?? '未分类').trim() || '未分类')
 const duration = computed(() => String(props.course?.credits ?? props.course?.duration ?? '2 学分').trim())
 const description = computed(() => String(props.course?.description ?? '').trim() || '暂无说明')
-const goals = computed(() => normalizeList(props.course?.goals ?? props.course?.skills))
-const points = computed(() => normalizeList(props.course?.points))
+const goals = computed(() => uniqueList(props.knowledgePoints.map((item) => toText(item?.ability))))
+const points = computed(() =>
+  props.knowledgePoints
+    .map((item) => {
+      const name = toText(item?.name)
+      const pointDescription = toText(item?.description)
+      if (name && pointDescription) return `${name}：${pointDescription}`
+      return name || pointDescription
+    })
+    .filter(Boolean),
+)
 const jobs = computed(() => normalizeList(props.course?.jobs))
 const interaction = computed(() => String(props.course?.interaction ?? '').trim() || '可结合课程案例与练习任务循序查阅。')
 const aiHint = computed(() => String(props.course?.aiHint ?? props.course?.jobExplanation ?? '').trim() || '可结合当前学习阶段，回看相关课程与练习内容。')

@@ -104,7 +104,7 @@ function toText(value) {
           v-for="major in majors"
           :key="major.id"
           class="major-card"
-          :to="{ name: 'major', params: { id: major.id } }"
+          :to="`/major/${encodeURIComponent(major.id)}`"
         >
           <div class="major-card__top">
             <span class="major-card__badge">
