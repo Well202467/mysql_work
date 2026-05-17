@@ -69,10 +69,6 @@ const assistantPrompts = ['课程如何对应岗位？', '当前阶段先学什�
             <AppIcon name="majors" :size="16" />
             进入学科览要
           </RouterLink>
-          <RouterLink class="hero__action" :to="{ name: 'map' }">
-            <AppIcon name="map" :size="16" />
-            查看学职图谱
-          </RouterLink>
         </div>
       </div>
 

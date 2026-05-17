@@ -1,9 +1,71 @@
 <script setup>
-import { computed } from 'vue'
-import { getAllMajors } from '../data/majors.js'
+import { computed, onMounted, ref } from 'vue'
+import request from '../api/request.js'
 import AppIcon from '../components/AppIcon.vue'
 
-const majors = computed(() => getAllMajors())
+const rawMajors = ref([])
+const loading = ref(true)
+const loadError = ref('')
+
+const majors = computed(() => rawMajors.value.map((major, index) => normalizeMajor(major, index)))
+const emptyMessage = computed(() => {
+  if (loading.value) return '正在加载专业数据...'
+  return loadError.value || '暂无专业数据。'
+})
+
+onMounted(() => {
+  loadMajors()
+})
+
+async function loadMajors() {
+  loading.value = true
+  loadError.value = ''
+
+  try {
+    const response = await request.get('/api/majors')
+    rawMajors.value = normalizeResponseArray(response)
+  } catch (error) {
+    console.error('获取专业列表失败', error)
+    rawMajors.value = []
+    loadError.value = '专业列表加载失败，请稍后重试。'
+  } finally {
+    loading.value = false
+  }
+}
+
+function normalizeResponseArray(response) {
+  const data = response?.data ?? response
+  return Array.isArray(data) ? data : []
+}
+
+function normalizeMajor(major, index) {
+  const source = major && typeof major === 'object' ? major : {}
+  const id = toText(source.id) || `major-${index + 1}`
+  const name = toText(source.name) || '未命名专业'
+  const intro = toText(source.intro) || '暂无专业简介。'
+
+  return {
+    ...source,
+    id,
+    name,
+    intro,
+    shortTitle: toText(source.shortTitle) || name,
+    tagline: toText(source.tagline) || intro,
+    abilityOverview: normalizeList(source.abilityOverview),
+    careerFocus: normalizeList(source.careerFocus),
+  }
+}
+
+function normalizeList(value) {
+  if (value == null) return []
+  if (Array.isArray(value)) return value.map((item) => toText(item)).filter(Boolean)
+  const text = toText(value)
+  return text ? [text] : []
+}
+
+function toText(value) {
+  return String(value ?? '').trim()
+}
 </script>
 
 <template>
@@ -37,7 +99,7 @@ const majors = computed(() => getAllMajors())
         </div>
       </div>
 
-      <div class="major-grid">
+      <div v-if="majors.length" class="major-grid">
         <RouterLink
           v-for="major in majors"
           :key="major.id"
@@ -69,6 +131,9 @@ const majors = computed(() => getAllMajors())
               <span v-for="item in major.abilityOverview.slice(0, 3)" :key="item" class="data-chip">
                 {{ item }}
               </span>
+              <span v-if="major.abilityOverview.length === 0" class="data-chip data-chip--muted">
+                暂无数据
+              </span>
             </div>
           </div>
 
@@ -82,6 +147,9 @@ const majors = computed(() => getAllMajors())
               >
                 {{ item }}
               </span>
+              <span v-if="major.careerFocus.length === 0" class="data-chip data-chip--muted">
+                暂无数据
+              </span>
             </div>
           </div>
 
@@ -90,6 +158,10 @@ const majors = computed(() => getAllMajors())
             进入该专业
           </span>
         </RouterLink>
+      </div>
+
+      <div v-else class="catalog-empty">
+        <p>{{ emptyMessage }}</p>
       </div>
     </section>
   </div>
@@ -310,10 +382,28 @@ const majors = computed(() => getAllMajors())
   color: #9a5e0e;
 }
 
+.data-chip--muted {
+  background: rgba(12, 31, 54, 0.06);
+  color: var(--text-muted);
+}
+
 .major-card__cta {
   margin-top: auto;
   color: var(--brand-strong);
   font-weight: 700;
+}
+
+.catalog-empty {
+  margin-top: 1.45rem;
+  padding: 1.2rem;
+  border-radius: var(--radius-xl);
+  border: 1px dashed var(--line-strong);
+  background: rgba(255, 255, 255, 0.64);
+  color: var(--text-main);
+}
+
+.catalog-empty p {
+  margin: 0;
 }
 
 @media (max-width: 1100px) {
