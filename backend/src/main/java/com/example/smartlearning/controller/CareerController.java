@@ -5,6 +5,7 @@ import com.example.smartlearning.entity.Career;
 import com.example.smartlearning.service.CareerService;
 import com.example.smartlearning.vo.CareerAbilityVO;
 import com.example.smartlearning.vo.CareerCourseVO;
+import com.example.smartlearning.vo.CareerDetailVO;
 import com.example.smartlearning.vo.CareerKnowledgePointVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,7 +38,7 @@ public class CareerController {
     @GetMapping("/{id}")
     @Operation(summary = "根据职业ID查询职业详情")
     public ApiResponse<?> getCareerById(@PathVariable String id) {
-        Career career = careerService.getCareerById(id);
+        CareerDetailVO career = careerService.getCareerById(id);
         return ApiResponse.success(career == null ? Collections.emptyList() : career);
     }
 

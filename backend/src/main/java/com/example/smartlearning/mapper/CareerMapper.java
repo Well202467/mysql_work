@@ -3,6 +3,7 @@ package com.example.smartlearning.mapper;
 import com.example.smartlearning.entity.Career;
 import com.example.smartlearning.vo.CareerAbilityVO;
 import com.example.smartlearning.vo.CareerCourseVO;
+import com.example.smartlearning.vo.CareerDetailVO;
 import com.example.smartlearning.vo.CareerKnowledgePointVO;
 import com.example.smartlearning.vo.CourseCareerVO;
 import org.apache.ibatis.annotations.Param;
@@ -13,7 +14,7 @@ public interface CareerMapper {
 
     List<Career> selectAll();
 
-    Career selectById(@Param("id") String id);
+    CareerDetailVO selectById(@Param("id") String id);
 
     List<CareerCourseVO> selectCoursesByCareerId(@Param("careerId") String careerId);
 

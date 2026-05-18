@@ -3,6 +3,7 @@ package com.example.smartlearning.service;
 import com.example.smartlearning.entity.Career;
 import com.example.smartlearning.vo.CareerAbilityVO;
 import com.example.smartlearning.vo.CareerCourseVO;
+import com.example.smartlearning.vo.CareerDetailVO;
 import com.example.smartlearning.vo.CareerKnowledgePointVO;
 import com.example.smartlearning.vo.CourseCareerVO;
 
@@ -12,7 +13,7 @@ public interface CareerService {
 
     List<Career> getCareerList();
 
-    Career getCareerById(String id);
+    CareerDetailVO getCareerById(String id);
 
     List<CareerCourseVO> getCoursesByCareerId(String careerId);
 

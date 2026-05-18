@@ -5,6 +5,7 @@ import com.example.smartlearning.mapper.CareerMapper;
 import com.example.smartlearning.service.CareerService;
 import com.example.smartlearning.vo.CareerAbilityVO;
 import com.example.smartlearning.vo.CareerCourseVO;
+import com.example.smartlearning.vo.CareerDetailVO;
 import com.example.smartlearning.vo.CareerKnowledgePointVO;
 import com.example.smartlearning.vo.CourseCareerVO;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ public class CareerServiceImpl implements CareerService {
     }
 
     @Override
-    public Career getCareerById(String id) {
+    public CareerDetailVO getCareerById(String id) {
         return careerMapper.selectById(id);
     }
 

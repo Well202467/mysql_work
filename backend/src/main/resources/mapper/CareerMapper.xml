@@ -15,16 +15,25 @@
         ORDER BY sort_order, id
     </select>
 
-    <select id="selectById" resultType="com.example.smartlearning.entity.Career">
+    <select id="selectById" resultType="com.example.smartlearning.vo.CareerDetailVO">
         SELECT
-            id,
-            name,
-            category,
-            sort_order,
-            created_at,
-            updated_at
-        FROM career
-        WHERE id = #{id}
+            c.id,
+            c.name,
+            c.category,
+            c.sort_order,
+            c.created_at,
+            c.updated_at,
+            cp.id AS profile_id,
+            cp.intro,
+            cp.work_content,
+            cp.requirement,
+            cp.common_tech,
+            cp.suitable_major,
+            cp.development_path,
+            cp.source
+        FROM career c
+        LEFT JOIN career_profile cp ON cp.career_id = c.id
+        WHERE c.id = #{id}
     </select>
 
     <select id="selectCoursesByCareerId" resultType="com.example.smartlearning.vo.CareerCourseVO">
