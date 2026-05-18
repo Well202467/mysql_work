@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import request from '../api/request.js'
 import HomeView from '../views/HomeView.vue'
 import MajorCatalogView from '../views/MajorCatalogView.vue'
 import CareerCatalogView from '../views/CareerCatalogView.vue'
@@ -145,5 +146,61 @@ router.beforeEach((to) => {
   }
   return true
 })
+
+router.afterEach((to) => {
+  if (to.path.startsWith('/admin')) {
+    return
+  }
+
+  recordVisit(to.path)
+})
+
+function recordVisit(path) {
+  try {
+    const visitorId = getVisitorId()
+    const sessionId = getSessionId()
+    if (!visitorId || !sessionId) {
+      return
+    }
+    request.post('/api/visit/record', { visitorId, sessionId, path }).catch(() => {})
+  } catch (error) {
+    // Ignore visit statistics failures so page navigation remains unaffected.
+  }
+}
+
+function getVisitorId() {
+  const storageKey = 'visitor_id'
+  const cachedVisitorId = localStorage.getItem(storageKey)
+  if (isValidStoredId(cachedVisitorId)) {
+    return cachedVisitorId
+  }
+
+  const newVisitorId = createVisitId()
+  localStorage.setItem(storageKey, newVisitorId)
+  return newVisitorId
+}
+
+function getSessionId() {
+  const storageKey = 'session_id'
+  const cachedSessionId = sessionStorage.getItem(storageKey)
+  if (isValidStoredId(cachedSessionId)) {
+    return cachedSessionId
+  }
+
+  const newSessionId = createVisitId()
+  sessionStorage.setItem(storageKey, newSessionId)
+  return newSessionId
+}
+
+function createVisitId() {
+  return (
+    window.crypto?.randomUUID?.() ||
+    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+  )
+}
+
+function isValidStoredId(value) {
+  return typeof value === 'string' && value.trim() !== '' && value !== '0' && value !== 'null'
+}
 
 export default router

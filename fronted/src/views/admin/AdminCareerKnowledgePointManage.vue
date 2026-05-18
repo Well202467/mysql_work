@@ -478,7 +478,7 @@ async function handleDelete(item) {
 }
 
 .table-panel {
-  overflow: auto;
+  overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.9);
@@ -486,16 +486,21 @@ async function handleDelete(item) {
 
 .career-point-table {
   width: 100%;
-  min-width: 1180px;
+  max-width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .career-point-table th,
 .career-point-table td {
-  padding: 0.9rem;
+  padding: 12px 10px;
   border-bottom: 1px solid var(--line);
+  font-size: 0.92rem;
   text-align: left;
   vertical-align: top;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .career-point-table th {
@@ -509,13 +514,70 @@ async function handleDelete(item) {
   line-height: 1.55;
 }
 
+.career-point-table th:nth-child(1),
+.career-point-table td:nth-child(1) {
+  width: 4%;
+}
+
+.career-point-table th:nth-child(2),
+.career-point-table td:nth-child(2) {
+  width: 10%;
+}
+
+.career-point-table th:nth-child(3),
+.career-point-table td:nth-child(3) {
+  width: 10%;
+}
+
+.career-point-table th:nth-child(4),
+.career-point-table td:nth-child(4) {
+  width: 10%;
+}
+
+.career-point-table th:nth-child(5),
+.career-point-table td:nth-child(5) {
+  width: 15%;
+}
+
+.career-point-table th:nth-child(6),
+.career-point-table td:nth-child(6) {
+  width: 7%;
+}
+
+.career-point-table th:nth-child(7),
+.career-point-table td:nth-child(7) {
+  width: 18%;
+}
+
+.career-point-table th:nth-child(8),
+.career-point-table td:nth-child(8) {
+  width: 7%;
+}
+
 .text-cell {
-  max-width: 18rem;
+  line-height: 1.6;
+}
+
+.career-point-table th:last-child,
+.career-point-table td:last-child {
+  width: 145px;
+  min-width: 145px;
 }
 
 .row-actions {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+
+.row-actions button {
+  min-width: 56px;
+  padding: 8px 12px;
+  flex-shrink: 0;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .empty-state {

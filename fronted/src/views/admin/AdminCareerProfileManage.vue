@@ -400,7 +400,7 @@ async function handleDelete(item) {
 }
 
 .table-panel {
-  overflow: auto;
+  overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.9);
@@ -408,16 +408,21 @@ async function handleDelete(item) {
 
 .profile-table {
   width: 100%;
-  min-width: 1080px;
+  max-width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .profile-table th,
 .profile-table td {
-  padding: 0.9rem;
+  padding: 12px 10px;
   border-bottom: 1px solid var(--line);
+  font-size: 0.92rem;
   text-align: left;
   vertical-align: top;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .profile-table th {
@@ -431,13 +436,60 @@ async function handleDelete(item) {
   line-height: 1.55;
 }
 
+.profile-table th:nth-child(1),
+.profile-table td:nth-child(1) {
+  width: 5%;
+}
+
+.profile-table th:nth-child(2),
+.profile-table td:nth-child(2) {
+  width: 13%;
+}
+
+.profile-table th:nth-child(3),
+.profile-table td:nth-child(3) {
+  width: 22%;
+}
+
+.profile-table th:nth-child(4),
+.profile-table td:nth-child(4) {
+  width: 22%;
+}
+
+.profile-table th:nth-child(5),
+.profile-table td:nth-child(5) {
+  width: 12%;
+}
+
+.profile-table th:nth-child(6),
+.profile-table td:nth-child(6) {
+  width: 8%;
+}
+
 .text-cell {
-  max-width: 18rem;
+  line-height: 1.6;
+}
+
+.profile-table th:last-child,
+.profile-table td:last-child {
+  width: 145px;
+  min-width: 145px;
 }
 
 .row-actions {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+
+.row-actions button {
+  min-width: 56px;
+  padding: 8px 12px;
+  flex-shrink: 0;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .empty-state {

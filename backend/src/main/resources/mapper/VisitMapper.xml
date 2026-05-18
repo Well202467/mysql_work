@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.smartlearning.mapper.VisitMapper">
+
+    <insert id="insertVisitLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO visit_log (
+            visitor_id,
+            session_id,
+            path,
+            ip,
+            user_agent,
+            referer
+        ) VALUES (
+            #{visitorId},
+            #{sessionId},
+            #{path},
+            #{ip},
+            #{userAgent},
+            #{referer}
+        )
+    </insert>
+
+    <select id="countPv" resultType="long">
+        SELECT COUNT(*)
+        FROM visit_log
+        WHERE created_at &gt;= #{startTime}
+          AND created_at &lt; #{endTime}
+    </select>
+
+    <select id="countUv" resultType="long">
+        SELECT COUNT(DISTINCT visitor_id)
+        FROM visit_log
+        WHERE created_at &gt;= #{startTime}
+          AND created_at &lt; #{endTime}
+    </select>
+
+    <select id="countSessions" resultType="long">
+        SELECT COUNT(DISTINCT COALESCE(NULLIF(session_id, ''), visitor_id))
+        FROM visit_log
+        WHERE created_at &gt;= #{startTime}
+          AND created_at &lt; #{endTime}
+    </select>
+
+    <select id="selectPopularPages" resultType="com.example.smartlearning.vo.PopularPageVO">
+        SELECT
+            path,
+            COUNT(*) AS count
+        FROM visit_log
+        WHERE created_at &gt;= #{startTime}
+          AND created_at &lt; #{endTime}
+        GROUP BY path
+        ORDER BY count DESC, path ASC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectDailyStats" resultType="com.example.smartlearning.vo.VisitDailyStatsVO">
+        SELECT
+            DATE_FORMAT(created_at, '%Y-%m-%d') AS date,
+            COUNT(DISTINCT visitor_id) AS uv,
+            COUNT(*) AS pv,
+            COUNT(DISTINCT COALESCE(NULLIF(session_id, ''), visitor_id)) AS sessions
+        FROM visit_log
+        <where>
+            <if test="startTime != null">
+                created_at &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND created_at &lt; #{endTime}
+            </if>
+        </where>
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d')
+        ORDER BY date ASC
+    </select>
+</mapper>

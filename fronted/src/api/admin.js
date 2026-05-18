@@ -177,6 +177,21 @@ export function getKnowledgePointOptions(courseId) {
   return request.get(`/api/admin/options/knowledge-points${query}`)
 }
 
+export function getTodayVisitStats() {
+  return request.get('/api/admin/stats/today')
+}
+
+export function getVisitStatsHistory(params) {
+  if (!params || Object.keys(params).length === 0) {
+    return request.get('/api/admin/stats/history')
+  }
+  return request.get('/api/admin/stats/history', { params })
+}
+
+export function getVisitHistoryStats(params) {
+  return getVisitStatsHistory(params)
+}
+
 function normalizeResponseData(response) {
   return Array.isArray(response?.data) ? response.data : []
 }

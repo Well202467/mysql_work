@@ -349,7 +349,7 @@ async function handleDelete(item) {
 }
 
 .table-panel {
-  overflow: auto;
+  overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.9);
@@ -357,7 +357,7 @@ async function handleDelete(item) {
 
 .point-table {
   width: 100%;
-  min-width: 960px;
+  min-width: 1100px;
   border-collapse: collapse;
 }
 
@@ -380,9 +380,22 @@ async function handleDelete(item) {
   line-height: 1.55;
 }
 
+.point-table th:last-child,
+.point-table td:last-child {
+  width: 150px;
+  min-width: 150px;
+}
+
 .row-actions {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.row-actions button {
+  min-width: 64px;
+  white-space: nowrap;
 }
 
 .empty-state {
