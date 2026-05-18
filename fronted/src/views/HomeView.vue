@@ -1,4 +1,8 @@
 <script setup>
+import { computed, ref } from 'vue'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
+import request from '../api/request.js'
 import AppIcon from '../components/AppIcon.vue'
 
 const pathSteps = [
@@ -29,26 +33,52 @@ const pathSteps = [
   },
 ]
 
-const assistantMessages = [
-  {
-    role: 'user',
-    text: '我想了解软件工程专业，后端开发方向应该先重点学哪些课程？',
-  },
-  {
-    role: 'assistant',
-    text: '可先从程序设计、数据结构、数据库系统概论与操作系统入手，再逐步过渡到软件工程、软件设计与体系结构等课程。',
-  },
-  {
-    role: 'user',
-    text: '如果我更关注岗位能力，需要重点留意哪些方向？',
-  },
-  {
-    role: 'assistant',
-    text: '可重点关注工程化开发、系统设计、数据库应用与团队协作能力，这些内容与后端开发、软件工程等岗位联系更为紧密。',
-  },
-]
-
 const assistantPrompts = ['课程如何对应岗位？', '当前阶段先学什么？', '怎样补足能力短板？']
+const userQuestion = ref('')
+const assistantAnswer = ref('')
+const assistantLoading = ref(false)
+const assistantError = ref('')
+
+const renderedAiAnswer = computed(() => {
+  if (!assistantAnswer.value) return ''
+  const rawHtml = marked.parse(assistantAnswer.value)
+  return DOMPurify.sanitize(rawHtml)
+})
+
+async function askAi() {
+  const question = userQuestion.value.trim()
+  assistantError.value = ''
+  assistantAnswer.value = ''
+
+  if (!question) {
+    assistantError.value = '请输入你想咨询的问题。'
+    return
+  }
+
+  userQuestion.value = question
+  assistantLoading.value = true
+
+  try {
+    const result = await request.post('/api/ai/chat', { message: userQuestion.value.trim() }, { timeout: 60000 })
+    if (result?.code !== 200) {
+      assistantError.value = result?.message || 'AI 学习助手暂时无法回答。'
+      return
+    }
+
+    assistantAnswer.value = String(result?.data?.answer ?? '').trim() || 'AI 学习助手暂时没有返回内容。'
+  } catch (error) {
+    assistantError.value = error?.response?.status
+      ? error?.response?.data?.message || 'AI 学习助手请求失败，请稍后重试。'
+      : 'AI 接口暂时不可用，请检查后端服务是否启动。'
+  } finally {
+    assistantLoading.value = false
+  }
+}
+
+async function askQuickQuestion(question) {
+  userQuestion.value = question
+  await askAi()
+}
 </script>
 
 <template>
@@ -159,35 +189,50 @@ const assistantPrompts = ['课程如何对应岗位？', '当前阶段先学什�
       </div>
 
       <div class="assistant-panel">
-        <div class="assistant-panel__main">
-          <span class="assistant-panel__tag">知点问学</span>
-          <h3 class="assistant-panel__title">
-            <AppIcon name="support" :size="20" />
-            以问答相引，助你明晰课程与发展方向
-          </h3>
-          <p class="assistant-panel__text">
-            围绕所学专业、当前课程与目标岗位，呈现更自然的问学体验，让课程认知与成长方向相互映照。
-          </p>
-        </div>
-
         <div class="assistant-chat">
-          <div
-            v-for="(item, index) in assistantMessages"
-            :key="`${item.role}-${index}`"
-            class="chat-bubble"
-            :class="item.role === 'assistant' ? 'chat-bubble--assistant' : 'chat-bubble--user'"
-          >
-            <span class="chat-bubble__role">{{ item.role === 'assistant' ? 'AI 学习助手' : '学习者' }}</span>
-            <p>{{ item.text }}</p>
-          </div>
-
           <div class="assistant-prompts">
-            <span v-for="item in assistantPrompts" :key="item" class="assistant-prompt">{{ item }}</span>
+            <button
+              v-for="item in assistantPrompts"
+              :key="item"
+              type="button"
+              class="assistant-prompt"
+              :disabled="assistantLoading"
+              @click="askQuickQuestion(item)"
+            >
+              {{ item }}
+            </button>
           </div>
 
-          <div class="assistant-input">
-            <span class="assistant-input__placeholder">请输入你想咨询的课程、能力或岗位方向</span>
-            <span class="assistant-input__action">发送</span>
+          <div v-if="assistantLoading" class="chat-bubble chat-bubble--assistant chat-bubble--loading">
+            <span class="chat-bubble__role">AI 学习助手</span>
+            <p>正在思考...</p>
+          </div>
+
+          <form class="assistant-input" @submit.prevent="askAi">
+            <label class="sr-only" for="home-ai-question">AI 学习助手问题</label>
+            <textarea
+              id="home-ai-question"
+              v-model="userQuestion"
+              class="assistant-textarea"
+              rows="4"
+              placeholder="请输入你想咨询的课程、能力或岗位方向"
+              :disabled="assistantLoading"
+            ></textarea>
+            <div class="assistant-input__footer">
+              <p v-if="assistantError" class="assistant-error">{{ assistantError }}</p>
+              <button class="assistant-input__action" type="submit" :disabled="assistantLoading">
+                <AppIcon name="support" :size="15" />
+                {{ assistantLoading ? '思考中...' : '提问' }}
+              </button>
+            </div>
+          </form>
+
+          <div v-if="assistantAnswer" class="chat-bubble chat-bubble--assistant assistant-result">
+            <span class="chat-bubble__role">AI 学习助手</span>
+            <div
+              class="ai-answer markdown-body"
+              v-html="renderedAiAnswer"
+            ></div>
           </div>
         </div>
       </div>
@@ -250,7 +295,6 @@ const assistantPrompts = ['课程如何对应岗位？', '当前阶段先学什�
 .hero__title,
 .section__title,
 .panel-card__title,
-.assistant-panel__title,
 .hero__action,
 .section__eyebrow {
   display: inline-flex;
@@ -527,53 +571,30 @@ const assistantPrompts = ['课程如何对应岗位？', '当前阶段先学什�
 }
 
 .assistant-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  gap: 1rem;
+  display: block;
+  width: 100%;
+  max-width: 980px;
+  box-sizing: border-box;
+  margin: 0 auto;
 }
 
-.assistant-panel__main,
 .assistant-chat {
+  width: 100%;
+  max-width: 980px;
+  min-width: 0;
+  margin: 0 auto;
+  box-sizing: border-box;
   padding: 1.3rem;
   border-radius: var(--radius-xl);
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.8);
   box-shadow: none;
+  overflow: hidden;
 }
 
-.assistant-panel__main {
-  background: linear-gradient(180deg, rgba(62, 85, 113, 0.96) 0%, rgba(73, 96, 122, 0.94) 100%);
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.assistant-panel__tag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.4rem 0.72rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  color: rgba(255, 255, 255, 0.84);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.assistant-panel__title {
-  margin-top: 0.95rem;
-  font-size: 1.55rem;
-  line-height: 1.26;
-  color: #fff;
-}
-
-.assistant-panel__text,
 .chat-bubble p {
   margin: 0;
   line-height: 1.8;
-}
-
-.assistant-panel__text {
-  margin-top: 0.9rem;
-  color: rgba(255, 255, 255, 0.78);
 }
 
 .assistant-chat {
@@ -623,45 +644,224 @@ const assistantPrompts = ['课程如何对应岗位？', '当前阶段先学什�
   justify-content: center;
   padding: 0.42rem 0.78rem;
   border-radius: 999px;
+  border: 1px solid rgba(66, 103, 154, 0.12);
   background: rgba(66, 103, 154, 0.08);
   color: var(--brand-strong);
   font-size: 0.8rem;
   font-weight: 700;
+  cursor: pointer;
+}
+
+.assistant-prompt:disabled {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .assistant-input {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
+  display: grid;
+  gap: 0.85rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 0.95rem 1rem;
   border-radius: 18px;
   border: 1px solid var(--line);
   background: rgba(247, 250, 255, 0.94);
 }
 
-.assistant-input__placeholder {
-  color: var(--text-muted);
+.assistant-textarea {
+  width: 100%;
+  max-width: 100%;
+  min-height: 150px;
+  max-height: 220px;
+  box-sizing: border-box;
+  resize: vertical;
+  border: none;
+  background: transparent;
+  color: var(--text-strong);
+  font: inherit;
   line-height: 1.6;
+}
+
+.assistant-textarea:focus {
+  outline: none;
+}
+
+.assistant-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.assistant-input__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
 }
 
 .assistant-input__action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.4rem;
   min-width: 4.5rem;
   padding: 0.55rem 0.8rem;
   border-radius: 999px;
+  border: 1px solid var(--brand-strong);
   background: var(--brand-strong);
   color: #fff;
   font-size: 0.88rem;
   font-weight: 700;
+  cursor: pointer;
+}
+
+.assistant-input__action:disabled,
+.assistant-textarea:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.assistant-error {
+  margin: 0;
+  color: #9f2f2f;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.chat-bubble--loading p {
+  color: var(--text-muted);
+}
+
+.assistant-result {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.ai-answer {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  max-height: 520px;
+  color: var(--text-main);
+  line-height: 1.8;
+  overflow-y: auto;
+  overflow-x: hidden;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.markdown-body :deep(*) {
+  box-sizing: border-box;
+}
+
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3),
+.markdown-body :deep(h4),
+.markdown-body :deep(h5),
+.markdown-body :deep(h6) {
+  margin: 0.9rem 0 0.45rem;
+  color: var(--text-strong);
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.markdown-body :deep(h1) {
+  font-size: 1.45rem;
+}
+
+.markdown-body :deep(h2) {
+  font-size: 1.28rem;
+}
+
+.markdown-body :deep(h3) {
+  font-size: 1.12rem;
+}
+
+.markdown-body :deep(h4),
+.markdown-body :deep(h5),
+.markdown-body :deep(h6) {
+  font-size: 1rem;
+}
+
+.markdown-body :deep(p),
+.markdown-body :deep(ul),
+.markdown-body :deep(ol),
+.markdown-body :deep(blockquote),
+.markdown-body :deep(pre) {
+  margin: 0.55rem 0 0;
+}
+
+.markdown-body :deep(p:first-child),
+.markdown-body :deep(h1:first-child),
+.markdown-body :deep(h2:first-child),
+.markdown-body :deep(h3:first-child),
+.markdown-body :deep(ul:first-child),
+.markdown-body :deep(ol:first-child),
+.markdown-body :deep(pre:first-child) {
+  margin-top: 0;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  padding-left: 1.35rem;
+}
+
+.markdown-body :deep(li + li) {
+  margin-top: 0.25rem;
+}
+
+.markdown-body :deep(strong) {
+  color: var(--text-strong);
+  font-weight: 800;
+}
+
+.markdown-body :deep(code) {
+  padding: 0.12rem 0.32rem;
+  border-radius: 6px;
+  background: rgba(66, 103, 154, 0.1);
+  color: var(--text-strong);
+  font-family: Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.92em;
+}
+
+.markdown-body :deep(pre) {
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.95);
+  overflow-x: auto;
+}
+
+.markdown-body :deep(pre code) {
+  padding: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.markdown-body :deep(blockquote) {
+  padding-left: 0.85rem;
+  border-left: 3px solid rgba(66, 103, 154, 0.24);
+  color: var(--text-muted);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (max-width: 960px) {
   .hero,
-  .relation-visual,
-  .assistant-panel {
+  .relation-visual {
     grid-template-columns: 1fr;
   }
 
@@ -701,7 +901,7 @@ const assistantPrompts = ['课程如何对应岗位？', '当前阶段先学什�
     max-width: 100%;
   }
 
-  .assistant-input {
+  .assistant-input__footer {
     flex-direction: column;
     align-items: flex-start;
   }
