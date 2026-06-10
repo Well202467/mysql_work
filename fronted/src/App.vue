@@ -8,17 +8,18 @@ const route = useRoute()
 const navItems = [
   { name: 'home', label: '知点序章', icon: 'home' },
   { name: 'majors', label: '学科览要', icon: 'majors' },
-  { name: 'map', label: '学职图谱', icon: 'map' },
-  { name: 'resources', label: '博习斋', icon: 'resources' },
+  { name: 'careers', label: '职业方向', icon: 'job' },
 ]
 
+const currentNavName = computed(() => route.meta?.navName ?? route.name)
 const currentLabel = computed(() => route.meta?.title ?? '知点智学')
-const currentIcon = computed(() => navItems.find((item) => item.name === route.name)?.icon ?? 'major')
+const currentIcon = computed(() => navItems.find((item) => item.name === currentNavName.value)?.icon ?? 'major')
+const isAdminPage = computed(() => Boolean(route.meta?.adminPage))
 </script>
 
 <template>
   <div class="layout">
-    <header class="topbar">
+    <header v-if="!isAdminPage" class="topbar">
       <div class="topbar__inner">
         <RouterLink class="brand" :to="{ name: 'home' }">
           <span class="brand__mark" aria-hidden="true">
@@ -36,7 +37,7 @@ const currentIcon = computed(() => navItems.find((item) => item.name === route.n
             v-for="item in navItems"
             :key="item.name"
             class="topbar__link"
-            :class="{ 'topbar__link--active': route.name === item.name }"
+            :class="{ 'topbar__link--active': currentNavName === item.name }"
             :to="{ name: item.name }"
           >
             <AppIcon :name="item.icon" :size="16" />
@@ -51,7 +52,7 @@ const currentIcon = computed(() => navItems.find((item) => item.name === route.n
       </div>
     </header>
 
-    <main class="main">
+    <main class="main" :class="{ 'main--admin': isAdminPage }">
       <RouterView />
     </main>
   </div>
@@ -176,6 +177,10 @@ const currentIcon = computed(() => navItems.find((item) => item.name === route.n
 
 .main {
   padding: 1.15rem 1rem 2.8rem;
+}
+
+.main--admin {
+  padding: 0;
 }
 
 @media (max-width: 1040px) {

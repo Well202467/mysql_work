@@ -1,0 +1,798 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.smartlearning.mapper.AdminManageMapper">
+
+    <select id="selectMajors" resultType="com.example.smartlearning.entity.Major">
+        SELECT
+            id,
+            name,
+            intro,
+            created_at,
+            updated_at
+        FROM major
+        ORDER BY id
+    </select>
+
+    <select id="selectMajorById" resultType="com.example.smartlearning.entity.Major">
+        SELECT
+            id,
+            name,
+            intro,
+            created_at,
+            updated_at
+        FROM major
+        WHERE id = #{id}
+    </select>
+
+    <select id="countMajorById" resultType="int">
+        SELECT COUNT(*)
+        FROM major
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insertMajor">
+        INSERT INTO major (
+            id,
+            name,
+            intro
+        ) VALUES (
+            #{id},
+            #{name},
+            #{intro}
+        )
+    </insert>
+
+    <update id="updateMajor">
+        UPDATE major
+        SET
+            name = #{dto.name},
+            intro = #{dto.intro},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteMajor">
+        DELETE FROM major
+        WHERE id = #{id}
+    </delete>
+
+    <select id="selectCourses" resultType="com.example.smartlearning.entity.Course">
+        SELECT
+            id,
+            name,
+            description,
+            created_at,
+            updated_at
+        FROM course
+        ORDER BY id
+    </select>
+
+    <select id="selectCourseById" resultType="com.example.smartlearning.entity.Course">
+        SELECT
+            id,
+            name,
+            description,
+            created_at,
+            updated_at
+        FROM course
+        WHERE id = #{id}
+    </select>
+
+    <select id="countCourseById" resultType="int">
+        SELECT COUNT(*)
+        FROM course
+        WHERE id = #{id}
+    </select>
+
+    <select id="countCourseName" resultType="int">
+        SELECT COUNT(*)
+        FROM course
+        WHERE name = #{name}
+        <if test="excludeId != null and excludeId != ''">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <insert id="insertCourse">
+        INSERT INTO course (
+            id,
+            name,
+            description
+        ) VALUES (
+            #{id},
+            #{name},
+            #{description}
+        )
+    </insert>
+
+    <update id="updateCourse">
+        UPDATE course
+        SET
+            name = #{dto.name},
+            description = #{dto.description},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteCourse">
+        DELETE FROM course
+        WHERE id = #{id}
+    </delete>
+
+    <select id="selectMajorCourses" resultType="com.example.smartlearning.vo.AdminMajorCourseVO">
+        SELECT
+            mc.id,
+            mc.major_id,
+            m.name AS major_name,
+            mc.course_id,
+            c.name AS course_name,
+            mc.type,
+            mc.credits,
+            mc.created_at,
+            mc.updated_at
+        FROM major_course mc
+        LEFT JOIN major m ON mc.major_id = m.id
+        LEFT JOIN course c ON mc.course_id = c.id
+        ORDER BY mc.id
+    </select>
+
+    <select id="selectMajorCourseById" resultType="com.example.smartlearning.entity.MajorCourse">
+        SELECT
+            id,
+            major_id,
+            course_id,
+            type,
+            credits,
+            created_at,
+            updated_at
+        FROM major_course
+        WHERE id = #{id}
+    </select>
+
+    <select id="countMajorCourseById" resultType="int">
+        SELECT COUNT(*)
+        FROM major_course
+        WHERE id = #{id}
+    </select>
+
+    <select id="countMajorCourseRelation" resultType="int">
+        SELECT COUNT(*)
+        FROM major_course
+        WHERE major_id = #{majorId}
+          AND course_id = #{courseId}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <select id="countMajorCourseByMajorId" resultType="int">
+        SELECT COUNT(*)
+        FROM major_course
+        WHERE major_id = #{majorId}
+    </select>
+
+    <select id="countMajorCourseByCourseId" resultType="int">
+        SELECT COUNT(*)
+        FROM major_course
+        WHERE course_id = #{courseId}
+    </select>
+
+    <insert id="insertMajorCourse" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO major_course (
+            major_id,
+            course_id,
+            type,
+            credits
+        ) VALUES (
+            #{majorId},
+            #{courseId},
+            #{type},
+            #{credits}
+        )
+    </insert>
+
+    <update id="updateMajorCourse">
+        UPDATE major_course
+        SET
+            major_id = #{dto.majorId},
+            course_id = #{dto.courseId},
+            type = #{dto.type},
+            credits = #{dto.credits},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteMajorCourse">
+        DELETE FROM major_course
+        WHERE id = #{id}
+    </delete>
+
+    <select id="selectKnowledgePoints" resultType="com.example.smartlearning.vo.AdminKnowledgePointVO">
+        SELECT
+            kp.id,
+            kp.course_id,
+            c.name AS course_name,
+            kp.name,
+            kp.description,
+            kp.difficulty,
+            kp.ability,
+            kp.source,
+            kp.created_at,
+            kp.updated_at
+        FROM knowledge_point kp
+        LEFT JOIN course c ON kp.course_id = c.id
+        ORDER BY kp.id
+    </select>
+
+    <select id="selectKnowledgePointById" resultType="com.example.smartlearning.entity.KnowledgePoint">
+        SELECT
+            id,
+            course_id,
+            name,
+            description,
+            difficulty,
+            ability,
+            source,
+            created_at,
+            updated_at
+        FROM knowledge_point
+        WHERE id = #{id}
+    </select>
+
+    <select id="countKnowledgePointById" resultType="int">
+        SELECT COUNT(*)
+        FROM knowledge_point
+        WHERE id = #{id}
+    </select>
+
+    <select id="countKnowledgePointByIdAndCourseId" resultType="int">
+        SELECT COUNT(*)
+        FROM knowledge_point
+        WHERE id = #{id}
+          AND course_id = #{courseId}
+    </select>
+
+    <select id="countKnowledgePointByCourseId" resultType="int">
+        SELECT COUNT(*)
+        FROM knowledge_point
+        WHERE course_id = #{courseId}
+    </select>
+
+    <insert id="insertKnowledgePoint" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO knowledge_point (
+            course_id,
+            name,
+            description,
+            difficulty,
+            ability,
+            source
+        ) VALUES (
+            #{courseId},
+            #{name},
+            #{description},
+            #{difficulty},
+            #{ability},
+            #{source}
+        )
+    </insert>
+
+    <update id="updateKnowledgePoint">
+        UPDATE knowledge_point
+        SET
+            course_id = #{dto.courseId},
+            name = #{dto.name},
+            description = #{dto.description},
+            difficulty = #{dto.difficulty},
+            ability = #{dto.ability},
+            source = #{dto.source},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteKnowledgePoint">
+        DELETE FROM knowledge_point
+        WHERE id = #{id}
+    </delete>
+
+    <select id="selectCareers" resultType="com.example.smartlearning.entity.Career">
+        SELECT
+            id,
+            name,
+            category,
+            sort_order,
+            created_at,
+            updated_at
+        FROM career
+        ORDER BY sort_order, id
+    </select>
+
+    <select id="selectCareerById" resultType="com.example.smartlearning.entity.Career">
+        SELECT
+            id,
+            name,
+            category,
+            sort_order,
+            created_at,
+            updated_at
+        FROM career
+        WHERE id = #{id}
+    </select>
+
+    <select id="countCareerById" resultType="int">
+        SELECT COUNT(*)
+        FROM career
+        WHERE id = #{id}
+    </select>
+
+    <select id="countCareerName" resultType="int">
+        SELECT COUNT(*)
+        FROM career
+        WHERE name = #{name}
+        <if test="excludeId != null and excludeId != ''">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <insert id="insertCareer">
+        INSERT INTO career (
+            id,
+            name,
+            category,
+            sort_order
+        ) VALUES (
+            #{id},
+            #{name},
+            #{category},
+            #{sortOrder}
+        )
+    </insert>
+
+    <update id="updateCareer">
+        UPDATE career
+        SET
+            name = #{dto.name},
+            category = #{dto.category},
+            sort_order = #{dto.sortOrder},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteCareer">
+        DELETE FROM career
+        WHERE id = #{id}
+    </delete>
+
+    <select id="selectCareerProfiles" resultType="com.example.smartlearning.vo.AdminCareerProfileVO">
+        SELECT
+            cp.id,
+            cp.career_id,
+            c.name AS career_name,
+            cp.intro,
+            cp.work_content,
+            cp.requirement,
+            cp.common_tech,
+            cp.suitable_major,
+            cp.development_path,
+            cp.source,
+            cp.created_at,
+            cp.updated_at
+        FROM career_profile cp
+        LEFT JOIN career c ON cp.career_id = c.id
+        ORDER BY cp.id
+    </select>
+
+    <select id="selectCareerProfileById" resultType="com.example.smartlearning.entity.CareerProfile">
+        SELECT
+            id,
+            career_id,
+            intro,
+            work_content,
+            requirement,
+            common_tech,
+            suitable_major,
+            development_path,
+            source,
+            created_at,
+            updated_at
+        FROM career_profile
+        WHERE id = #{id}
+    </select>
+
+    <select id="countCareerProfileById" resultType="int">
+        SELECT COUNT(*)
+        FROM career_profile
+        WHERE id = #{id}
+    </select>
+
+    <select id="countCareerProfileByCareerId" resultType="int">
+        SELECT COUNT(*)
+        FROM career_profile
+        WHERE career_id = #{careerId}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <insert id="insertCareerProfile" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO career_profile (
+            career_id,
+            intro,
+            work_content,
+            requirement,
+            common_tech,
+            suitable_major,
+            development_path,
+            source
+        ) VALUES (
+            #{careerId},
+            #{intro},
+            #{workContent},
+            #{requirement},
+            #{commonTech},
+            #{suitableMajor},
+            #{developmentPath},
+            #{source}
+        )
+    </insert>
+
+    <update id="updateCareerProfile">
+        UPDATE career_profile
+        SET
+            career_id = #{dto.careerId},
+            intro = #{dto.intro},
+            work_content = #{dto.workContent},
+            requirement = #{dto.requirement},
+            common_tech = #{dto.commonTech},
+            suitable_major = #{dto.suitableMajor},
+            development_path = #{dto.developmentPath},
+            source = #{dto.source},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteCareerProfile">
+        DELETE FROM career_profile
+        WHERE id = #{id}
+    </delete>
+
+    <select id="selectCareerAbilities" resultType="com.example.smartlearning.vo.AdminCareerAbilityVO">
+        SELECT
+            ca.id,
+            ca.career_id,
+            c.name AS career_name,
+            ca.name,
+            ca.description,
+            ca.ability_type,
+            ca.importance,
+            ca.learning_advice,
+            ca.created_at,
+            ca.updated_at
+        FROM career_ability ca
+        LEFT JOIN career c ON ca.career_id = c.id
+        ORDER BY ca.id
+    </select>
+
+    <select id="selectCareerAbilityById" resultType="com.example.smartlearning.entity.CareerAbility">
+        SELECT
+            id,
+            career_id,
+            name,
+            description,
+            ability_type,
+            importance,
+            learning_advice,
+            created_at,
+            updated_at
+        FROM career_ability
+        WHERE id = #{id}
+    </select>
+
+    <select id="countCareerAbilityById" resultType="int">
+        SELECT COUNT(*)
+        FROM career_ability
+        WHERE id = #{id}
+    </select>
+
+    <select id="countCareerAbilityByCareerId" resultType="int">
+        SELECT COUNT(*)
+        FROM career_ability
+        WHERE career_id = #{careerId}
+    </select>
+
+    <insert id="insertCareerAbility" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO career_ability (
+            career_id,
+            name,
+            description,
+            ability_type,
+            importance,
+            learning_advice
+        ) VALUES (
+            #{careerId},
+            #{name},
+            #{description},
+            #{abilityType},
+            #{importance},
+            #{learningAdvice}
+        )
+    </insert>
+
+    <update id="updateCareerAbility">
+        UPDATE career_ability
+        SET
+            career_id = #{dto.careerId},
+            name = #{dto.name},
+            description = #{dto.description},
+            ability_type = #{dto.abilityType},
+            importance = #{dto.importance},
+            learning_advice = #{dto.learningAdvice},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteCareerAbility">
+        DELETE FROM career_ability
+        WHERE id = #{id}
+    </delete>
+
+    <select id="selectCareerCourses" resultType="com.example.smartlearning.vo.AdminCareerCourseVO">
+        SELECT
+            cc.id,
+            cc.career_id,
+            ca.name AS career_name,
+            cc.course_id,
+            co.name AS course_name,
+            cc.course_role,
+            cc.related_ability,
+            cc.related_points,
+            cc.importance,
+            cc.is_core,
+            cc.learning_stage,
+            cc.created_at,
+            cc.updated_at
+        FROM career_course cc
+        LEFT JOIN career ca ON cc.career_id = ca.id
+        LEFT JOIN course co ON cc.course_id = co.id
+        ORDER BY cc.id
+    </select>
+
+    <select id="selectCareerCourseById" resultType="com.example.smartlearning.entity.CareerCourse">
+        SELECT
+            id,
+            career_id,
+            course_id,
+            course_role,
+            related_ability,
+            related_points,
+            importance,
+            is_core,
+            learning_stage,
+            created_at,
+            updated_at
+        FROM career_course
+        WHERE id = #{id}
+    </select>
+
+    <select id="countCareerCourseById" resultType="int">
+        SELECT COUNT(*)
+        FROM career_course
+        WHERE id = #{id}
+    </select>
+
+    <select id="countCareerCourseRelation" resultType="int">
+        SELECT COUNT(*)
+        FROM career_course
+        WHERE career_id = #{careerId}
+          AND course_id = #{courseId}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <select id="countCareerCourseByCareerId" resultType="int">
+        SELECT COUNT(*)
+        FROM career_course
+        WHERE career_id = #{careerId}
+    </select>
+
+    <select id="countCareerCourseByCourseId" resultType="int">
+        SELECT COUNT(*)
+        FROM career_course
+        WHERE course_id = #{courseId}
+    </select>
+
+    <insert id="insertCareerCourse" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO career_course (
+            career_id,
+            course_id,
+            course_role,
+            related_ability,
+            related_points,
+            importance,
+            is_core,
+            learning_stage
+        ) VALUES (
+            #{careerId},
+            #{courseId},
+            #{courseRole},
+            #{relatedAbility},
+            #{relatedPoints},
+            #{importance},
+            #{isCore},
+            #{learningStage}
+        )
+    </insert>
+
+    <update id="updateCareerCourse">
+        UPDATE career_course
+        SET
+            career_id = #{dto.careerId},
+            course_id = #{dto.courseId},
+            course_role = #{dto.courseRole},
+            related_ability = #{dto.relatedAbility},
+            related_points = #{dto.relatedPoints},
+            importance = #{dto.importance},
+            is_core = #{dto.isCore},
+            learning_stage = #{dto.learningStage},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteCareerCourse">
+        DELETE FROM career_course
+        WHERE id = #{id}
+    </delete>
+
+    <select id="selectCareerKnowledgePoints" resultType="com.example.smartlearning.vo.AdminCareerKnowledgePointVO">
+        SELECT
+            ckp.id,
+            ckp.career_id,
+            ca.name AS career_name,
+            ckp.course_id,
+            co.name AS course_name,
+            ckp.knowledge_point_id,
+            kp.name AS knowledge_point_name,
+            ckp.use_scene,
+            ckp.importance,
+            ckp.learning_advice,
+            ckp.source,
+            ckp.created_at,
+            ckp.updated_at
+        FROM career_knowledge_point ckp
+        LEFT JOIN career ca ON ckp.career_id = ca.id
+        LEFT JOIN course co ON ckp.course_id = co.id
+        LEFT JOIN knowledge_point kp ON ckp.knowledge_point_id = kp.id
+        ORDER BY ckp.id
+    </select>
+
+    <select id="selectCareerKnowledgePointById" resultType="com.example.smartlearning.entity.CareerKnowledgePoint">
+        SELECT
+            id,
+            career_id,
+            course_id,
+            knowledge_point_id,
+            use_scene,
+            importance,
+            learning_advice,
+            source,
+            created_at,
+            updated_at
+        FROM career_knowledge_point
+        WHERE id = #{id}
+    </select>
+
+    <select id="countCareerKnowledgePointById" resultType="int">
+        SELECT COUNT(*)
+        FROM career_knowledge_point
+        WHERE id = #{id}
+    </select>
+
+    <select id="countCareerKnowledgePointRelation" resultType="int">
+        SELECT COUNT(*)
+        FROM career_knowledge_point
+        WHERE career_id = #{careerId}
+          AND knowledge_point_id = #{knowledgePointId}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <select id="countCareerKnowledgePointByCareerId" resultType="int">
+        SELECT COUNT(*)
+        FROM career_knowledge_point
+        WHERE career_id = #{careerId}
+    </select>
+
+    <select id="countCareerKnowledgePointByCourseId" resultType="int">
+        SELECT COUNT(*)
+        FROM career_knowledge_point
+        WHERE course_id = #{courseId}
+    </select>
+
+    <select id="countCareerKnowledgePointByKnowledgePointId" resultType="int">
+        SELECT COUNT(*)
+        FROM career_knowledge_point
+        WHERE knowledge_point_id = #{knowledgePointId}
+    </select>
+
+    <insert id="insertCareerKnowledgePoint" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO career_knowledge_point (
+            career_id,
+            course_id,
+            knowledge_point_id,
+            use_scene,
+            importance,
+            learning_advice,
+            source
+        ) VALUES (
+            #{careerId},
+            #{courseId},
+            #{knowledgePointId},
+            #{useScene},
+            #{importance},
+            #{learningAdvice},
+            #{source}
+        )
+    </insert>
+
+    <update id="updateCareerKnowledgePoint">
+        UPDATE career_knowledge_point
+        SET
+            career_id = #{dto.careerId},
+            course_id = #{dto.courseId},
+            knowledge_point_id = #{dto.knowledgePointId},
+            use_scene = #{dto.useScene},
+            importance = #{dto.importance},
+            learning_advice = #{dto.learningAdvice},
+            source = #{dto.source},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteCareerKnowledgePoint">
+        DELETE FROM career_knowledge_point
+        WHERE id = #{id}
+    </delete>
+
+    <select id="selectMajorOptions" resultType="com.example.smartlearning.vo.OptionVO">
+        SELECT
+            id AS value,
+            name AS label
+        FROM major
+        ORDER BY id
+    </select>
+
+    <select id="selectCourseOptions" resultType="com.example.smartlearning.vo.OptionVO">
+        SELECT
+            id AS value,
+            name AS label
+        FROM course
+        ORDER BY id
+    </select>
+
+    <select id="selectCareerOptions" resultType="com.example.smartlearning.vo.OptionVO">
+        SELECT
+            id AS value,
+            name AS label
+        FROM career
+        ORDER BY sort_order, id
+    </select>
+
+    <select id="selectKnowledgePointOptions" resultType="com.example.smartlearning.vo.OptionVO">
+        SELECT
+            CAST(kp.id AS CHAR) AS value,
+            CASE
+                WHEN c.name IS NULL THEN kp.name
+                ELSE CONCAT(kp.name, ' - ', c.name)
+            END AS label
+        FROM knowledge_point kp
+        LEFT JOIN course c ON kp.course_id = c.id
+        <where>
+            <if test="courseId != null and courseId != ''">
+                kp.course_id = #{courseId}
+            </if>
+        </where>
+        ORDER BY kp.id
+    </select>
+</mapper>

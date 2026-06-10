@@ -1,42 +1,193 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { getJobProfileByName, getMajorById } from '../data/majors.js'
+import { useRoute, useRouter } from 'vue-router'
+import { getCourseCareers, getCourseKnowledgePoints } from '../api/courses.js'
+import request from '../api/request.js'
 import CourseModal from '../components/CourseModal.vue'
-import JobModal from '../components/JobModal.vue'
 import AppIcon from '../components/AppIcon.vue'
 
 const route = useRoute()
+const router = useRouter()
 const majorId = ref('')
+const majorDetail = ref(null)
+const majorCourses = ref([])
+const loading = ref(false)
+const loadError = ref('')
 const showModal = ref(false)
-const showJobModal = ref(false)
 const selectedCourse = ref(null)
-const selectedJob = ref(null)
+const selectedCourseKnowledgePoints = ref([])
+const selectedCourseCareers = ref([])
+const majorKnowledgePoints = ref([])
+const majorCourseCareers = ref([])
 const searchQuery = ref('')
 const typeFilter = ref('all')
+let loadVersion = 0
+let knowledgePointLoadVersion = 0
 
 watch(
   () => route.params.id,
   (value) => {
     majorId.value = String(value ?? '')
+    majorDetail.value = null
+    majorCourses.value = []
+    majorKnowledgePoints.value = []
+    majorCourseCareers.value = []
+    loadError.value = ''
     showModal.value = false
-    showJobModal.value = false
     selectedCourse.value = null
-    selectedJob.value = null
+    selectedCourseKnowledgePoints.value = []
+    selectedCourseCareers.value = []
     searchQuery.value = ''
     typeFilter.value = 'all'
+    loadMajorPage(majorId.value)
   },
   { immediate: true },
 )
 
-const major = computed(() => getMajorById(majorId.value))
-const courses = computed(() => major.value?.courses ?? [])
-const learningGoals = computed(() => normalizeList(major.value?.learningGoals))
-const resources = computed(() => major.value?.resources ?? [])
-const softMetrics = computed(() => major.value?.metrics ?? [])
-const careerProfiles = computed(() =>
-  normalizeList(major.value?.careerFocus).map((name) => getJobProfileByName(name)).filter(Boolean),
+const major = computed(() => majorDetail.value)
+const courses = computed(() => majorCourses.value)
+const learningGoals = computed(() => {
+  const map = new Map()
+
+  for (const point of majorKnowledgePoints.value) {
+    const name = toText(point.name)
+    const description = toText(point.description)
+    const text = name && description ? `${name}：${description}` : name || description
+    if (text && !map.has(text)) map.set(text, text)
+    if (map.size >= 6) break
+  }
+
+  return Array.from(map.values())
+})
+const abilityOverview = computed(() =>
+  uniqueTextList([
+    ...majorKnowledgePoints.value.flatMap((point) => splitTextList(point.ability)),
+    ...majorCourseCareers.value.flatMap((career) => splitTextList(career.relatedAbility)),
+  ]),
 )
+const careerProfiles = computed(() => {
+  const map = new Map()
+
+  for (const career of majorCourseCareers.value) {
+    const id = toText(career.careerId ?? career.id)
+    const name = toText(career.careerName ?? career.name)
+    const key = id || name
+    if (!key || map.has(key)) continue
+
+    map.set(key, {
+      ...career,
+      id,
+      name: name || '未命名职业',
+      category: toText(career.category) || '未分类',
+    })
+  }
+
+  return Array.from(map.values())
+})
+const softMetrics = computed(() => {
+  const metrics = normalizeMetrics(major.value?.metrics)
+  if (metrics.length) return metrics
+  if (!major.value) return []
+
+  return [
+    { label: '专业编号', value: major.value.id || '暂无' },
+    { label: '课程数量', value: `${courses.value.length} 门` },
+  ]
+})
+const courseEmptyMessage = computed(() => {
+  if (loading.value) return '正在加载课程数据...'
+  if (loadError.value && major.value) return loadError.value
+  if (courses.value.length === 0) return '暂无课程数据。'
+  return '未找到符合条件的课程，请调整关键词或筛选条件。'
+})
+
+async function loadMajorPage(id) {
+  const currentVersion = ++loadVersion
+
+  if (!id) {
+    loadError.value = '未找到对应的学科页面。'
+    return
+  }
+
+  loading.value = true
+
+  try {
+    const majorResponse = await request.get(`/api/majors/${encodeURIComponent(id)}`)
+    if (currentVersion !== loadVersion) return
+
+    majorDetail.value = normalizeMajor(extractData(majorResponse))
+    if (!majorDetail.value) {
+      loadError.value = '未找到对应的学科页面。'
+      return
+    }
+
+    try {
+      const coursesResponse = await request.get(`/api/majors/${encodeURIComponent(id)}/courses`)
+      if (currentVersion !== loadVersion) return
+      majorCourses.value = normalizeCourses(extractArrayData(coursesResponse))
+      await loadMajorCourseRelations(majorCourses.value, currentVersion)
+    } catch (error) {
+      if (currentVersion !== loadVersion) return
+      console.error('获取专业课程失败', error)
+      majorCourses.value = []
+      majorKnowledgePoints.value = []
+      majorCourseCareers.value = []
+      loadError.value = '课程列表加载失败，请稍后重试。'
+    }
+  } catch (error) {
+    if (currentVersion !== loadVersion) return
+    console.error('获取专业详情失败', error)
+    majorDetail.value = null
+    majorCourses.value = []
+    majorKnowledgePoints.value = []
+    majorCourseCareers.value = []
+    loadError.value = '专业详情加载失败，请稍后重试。'
+  } finally {
+    if (currentVersion === loadVersion) {
+      loading.value = false
+    }
+  }
+}
+
+async function loadMajorCourseRelations(courseList, currentVersion) {
+  const courseIds = uniqueTextList(courseList.map((course) => course?.id))
+
+  if (!courseIds.length) {
+    majorKnowledgePoints.value = []
+    majorCourseCareers.value = []
+    return
+  }
+
+  const [knowledgePointGroups, careerGroups] = await Promise.all([
+    Promise.all(
+      courseIds.map(async (courseId) => {
+        try {
+          const response = await getCourseKnowledgePoints(courseId)
+          return normalizeKnowledgePoints(extractArrayData(response))
+        } catch (error) {
+          console.error(`获取课程 ${courseId} 的知识点失败`, error)
+          return []
+        }
+      }),
+    ),
+    Promise.all(
+      courseIds.map(async (courseId) => {
+        try {
+          const response = await getCourseCareers(courseId)
+          return normalizeCourseCareers(extractArrayData(response))
+        } catch (error) {
+          console.error(`获取课程 ${courseId} 的关联岗位失败`, error)
+          return []
+        }
+      }),
+    ),
+  ])
+
+  if (currentVersion !== loadVersion) return
+
+  majorKnowledgePoints.value = dedupeKnowledgePoints(knowledgePointGroups.flat())
+  majorCourseCareers.value = dedupeCourseCareers(careerGroups.flat())
+}
 
 function normalizeList(value) {
   if (value == null) return []
@@ -45,8 +196,174 @@ function normalizeList(value) {
   return text ? [text] : []
 }
 
+function splitTextList(value) {
+  return normalizeList(value)
+    .flatMap((item) => item.split(/[、,，;；/]/))
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function uniqueTextList(value) {
+  return Array.from(new Set(normalizeList(value)))
+}
+
+function extractData(response) {
+  return response?.data ?? response
+}
+
+function extractArrayData(response) {
+  const data = extractData(response)
+  return Array.isArray(data) ? data : []
+}
+
+function normalizeMajor(value) {
+  if (!value || Array.isArray(value) || typeof value !== 'object') return null
+
+  const name = toText(value.name) || '未命名专业'
+  const intro = toText(value.intro) || '暂无专业简介。'
+
+  return {
+    ...value,
+    id: toText(value.id) || majorId.value,
+    name,
+    badge: toText(value.badge) || '专业详情',
+    shortTitle: toText(value.shortTitle) || name,
+    intro,
+    overview: toText(value.overview) || intro,
+    metrics: normalizeMetrics(value.metrics),
+  }
+}
+
+function normalizeCourses(value) {
+  return value.map((course, index) => normalizeCourse(course, index))
+}
+
+function normalizeCourse(course, index) {
+  const source = course && typeof course === 'object' ? course : {}
+  const id = toText(source.id ?? source.courseId) || `course-${index + 1}`
+  const name = toText(source.name ?? source.courseName) || '未命名课程'
+  const description = toText(source.description ?? source.courseDescription) || '暂无课程说明。'
+  const credits = formatCredits(source.credits ?? source.duration)
+  const skills = normalizeList(source.skills ?? source.goals)
+  const jobs = normalizeList(source.jobs)
+  const points = normalizeList(source.points)
+  const interaction = toText(source.interaction) || '暂无学习建议。'
+  const aiHint = toText(source.aiHint ?? source.jobExplanation) || '暂无 AI 提示。'
+
+  return {
+    ...source,
+    id,
+    name,
+    description,
+    type: toText(source.type ?? source.courseType) || '未分类',
+    credits,
+    duration: credits,
+    skills,
+    goals: skills,
+    jobs,
+    points,
+    interaction,
+    aiHint,
+    jobExplanation: aiHint,
+  }
+}
+
+function normalizeKnowledgePoints(value) {
+  return value
+    .map((item) => {
+      const source = item && typeof item === 'object' ? item : {}
+      return {
+        ...source,
+        id: source.id ?? source.knowledgePointId,
+        name: toText(source.name ?? source.knowledgePointName),
+        description: toText(source.description ?? source.knowledgePointDescription),
+        ability: toText(source.ability),
+      }
+    })
+    .filter((item) => item.name || item.description || item.ability)
+}
+
+function dedupeKnowledgePoints(value) {
+  const map = new Map()
+
+  for (const point of value) {
+    const id = toText(point?.id)
+    const name = toText(point?.name)
+    const description = toText(point?.description)
+    const ability = toText(point?.ability)
+    const key = id || `${name}-${description}` || ability
+    if (!key || map.has(key)) continue
+    map.set(key, { ...point, id, name, description, ability })
+  }
+
+  return Array.from(map.values())
+}
+
+function normalizeCourseCareers(value) {
+  return value
+    .map((item, index) => {
+      const source = item && typeof item === 'object' ? item : {}
+      const careerId = toText(source.careerId ?? source.id)
+      const careerName = toText(source.careerName ?? source.name) || '未命名职业'
+
+      return {
+        ...source,
+        key: careerId || `${careerName}-${index}`,
+        careerId,
+        careerName,
+        name: careerName,
+        category: toText(source.category) || '未分类',
+        courseRole: toText(source.courseRole),
+      }
+    })
+    .filter((item) => item.careerId || item.careerName)
+}
+
+function dedupeCourseCareers(value) {
+  const map = new Map()
+
+  for (const career of value) {
+    const id = toText(career?.careerId ?? career?.id)
+    const name = toText(career?.careerName ?? career?.name)
+    const key = id || name
+    if (!key || map.has(key)) continue
+    map.set(key, {
+      ...career,
+      id,
+      careerId: id,
+      careerName: name || '未命名职业',
+      name: name || '未命名职业',
+      category: toText(career?.category) || '未分类',
+      relatedAbility: toText(career?.relatedAbility),
+    })
+  }
+
+  return Array.from(map.values())
+}
+
+function normalizeMetrics(value) {
+  if (!Array.isArray(value)) return []
+
+  return value
+    .map((item) => ({
+      label: toText(item?.label),
+      value: toText(item?.value),
+    }))
+    .filter((item) => item.label && item.value)
+}
+
+function formatCredits(value) {
+  const text = toText(value)
+  if (!text) return '暂无学分'
+  return text.includes('学分') ? text : `${text} 学分`
+}
+
+function toText(value) {
+  return String(value ?? '').trim()
+}
+
 function courseTitle(course) {
-  return String(course?.name ?? '').trim()
+  return String(course?.name ?? '未命名课程').trim()
 }
 
 function courseType(course) {
@@ -54,7 +371,7 @@ function courseType(course) {
 }
 
 function courseBlurb(course) {
-  return String(course?.description ?? '').trim()
+  return String(course?.description ?? '暂无课程说明。').trim()
 }
 
 const filterOptions = computed(() => {
@@ -114,31 +431,63 @@ const filteredCourses = computed(() => {
   return list
 })
 
-function openCourse(course) {
+async function openCourse(course) {
+  const currentVersion = ++knowledgePointLoadVersion
   selectedCourse.value = course
+  selectedCourseKnowledgePoints.value = []
+  selectedCourseCareers.value = []
   showModal.value = true
+
+  const courseId = toText(course?.id)
+  if (!courseId) return
+
+  const [knowledgePointsResult, careersResult] = await Promise.allSettled([
+    getCourseKnowledgePoints(courseId),
+    getCourseCareers(courseId),
+  ])
+
+  if (currentVersion !== knowledgePointLoadVersion) return
+
+  if (knowledgePointsResult.status === 'fulfilled') {
+    selectedCourseKnowledgePoints.value = normalizeKnowledgePoints(extractArrayData(knowledgePointsResult.value))
+  } else {
+    console.error('获取课程知识点失败', knowledgePointsResult.reason)
+    selectedCourseKnowledgePoints.value = []
+  }
+
+  if (careersResult.status === 'fulfilled') {
+    selectedCourseCareers.value = normalizeCourseCareers(extractArrayData(careersResult.value))
+  } else {
+    console.error('获取课程关联岗位失败', careersResult.reason)
+    selectedCourseCareers.value = []
+  }
 }
 
 function closeModal() {
+  knowledgePointLoadVersion += 1
   showModal.value = false
   selectedCourse.value = null
-}
-
-function openJobByName(name) {
-  const profile = getJobProfileByName(name)
-  if (!profile) return
-  selectedJob.value = profile
-  showJobModal.value = true
-}
-
-function closeJobModal() {
-  showJobModal.value = false
-  selectedJob.value = null
+  selectedCourseKnowledgePoints.value = []
+  selectedCourseCareers.value = []
 }
 
 function handleViewJob(name) {
   closeModal()
-  openJobByName(name)
+  const match = careerProfiles.value.find((career) => career.name === name || career.careerName === name)
+  if (match) openCareerDetail(match)
+}
+
+function handleViewCareer(career) {
+  const id = toText(career?.careerId ?? career?.id)
+  if (!id) return
+  closeModal()
+  router.push(`/careers/${encodeURIComponent(id)}`)
+}
+
+function openCareerDetail(career) {
+  const id = toText(career?.careerId ?? career?.id)
+  if (!id) return
+  router.push(`/careers/${encodeURIComponent(id)}`)
 }
 </script>
 
@@ -149,10 +498,14 @@ function handleViewJob(name) {
       <span>/</span>
       <RouterLink :to="{ name: 'majors' }">学科览要</RouterLink>
       <span>/</span>
-      <span>{{ major?.name ?? '未找到学科' }}</span>
+      <span>{{ major?.name ?? (loading ? '加载中' : '未找到学科') }}</span>
     </nav>
 
-    <template v-if="major">
+    <div v-if="loading && !major" class="empty">
+      <p>正在加载专业数据...</p>
+    </div>
+
+    <template v-else-if="major">
       <section class="hero">
         <div class="hero__content">
           <span class="hero__tag">{{ major.badge }}</span>
@@ -184,11 +537,14 @@ function handleViewJob(name) {
           <h2 class="panel__title"><AppIcon name="focus" :size="20" />学习重点</h2>
           <p class="panel__desc">这几个方面最值得优先理解，它们会贯穿相关课程与方向选择。</p>
         </div>
-        <div class="focus-grid">
+        <div v-if="learningGoals.length" class="focus-grid">
           <article v-for="item in learningGoals" :key="item" class="focus-card">
             <span class="focus-card__dot" aria-hidden="true"></span>
             <p>{{ item }}</p>
           </article>
+        </div>
+        <div v-else class="list-empty">
+          <p>暂无学习重点数据。</p>
         </div>
       </section>
 
@@ -198,13 +554,16 @@ function handleViewJob(name) {
             <h2 class="panel__title"><AppIcon name="ability" :size="20" />核心能力</h2>
             <p class="panel__desc">这些能力，是理解课程价值和判断发展方向时最重要的参照。</p>
           </div>
-          <div class="ability-grid">
-            <article v-for="(item, index) in major.abilityOverview" :key="item" class="ability-card">
+          <div v-if="abilityOverview.length" class="ability-grid">
+            <article v-for="(item, index) in abilityOverview" :key="item" class="ability-card">
               <span class="ability-card__icon">
                 <AppIcon :name="abilityIconName(index)" :size="18" />
               </span>
               <span class="ability-card__label">{{ item }}</span>
             </article>
+          </div>
+          <div v-else class="list-empty">
+            <p>暂无能力数据。</p>
           </div>
         </article>
 
@@ -213,20 +572,23 @@ function handleViewJob(name) {
             <h2 class="panel__title"><AppIcon name="job" :size="20" />典型岗位方向</h2>
             <p class="panel__desc">点击岗位，可进一步了解这一方向常见的工作内容与能力要求。</p>
           </div>
-          <div class="job-grid">
+          <div v-if="careerProfiles.length" class="job-grid">
             <button
               v-for="(item, index) in careerProfiles"
               :key="item.id"
               type="button"
               class="job-card"
-              @click="openJobByName(item.name)"
+              @click="openCareerDetail(item)"
             >
               <span class="job-card__icon">
                 <AppIcon :name="jobIconName(index)" :size="18" />
               </span>
               <span class="job-card__name">{{ item.name }}</span>
-              <p class="job-card__summary">{{ item.summary }}</p>
+              <p class="job-card__summary">{{ item.category }}</p>
             </button>
+          </div>
+          <div v-else class="list-empty">
+            <p>暂无岗位数据。</p>
           </div>
         </article>
       </section>
@@ -236,9 +598,6 @@ function handleViewJob(name) {
           <div class="panel__head">
             <h2 class="panel__title"><AppIcon name="course" :size="20" />核心课程</h2>
             <p class="panel__desc">课程不只是一张清单，更是理解专业能力如何逐步形成的路径。</p>
-          </div>
-          <div class="jump-links">
-            <RouterLink :to="{ name: 'map' }">查看学职图谱</RouterLink>
           </div>
         </div>
 
@@ -319,7 +678,7 @@ function handleViewJob(name) {
                   :key="`${course.id}-${job}`"
                   type="button"
                   class="mini-chip mini-chip--job"
-                  @click.stop="openJobByName(job)"
+                  @click.stop="handleViewJob(job)"
                 >
                   {{ job }}
                 </button>
@@ -329,43 +688,26 @@ function handleViewJob(name) {
         </div>
 
         <div v-else class="list-empty">
-          <p>未找到符合条件的课程，请调整关键词或筛选条件。</p>
+          <p>{{ courseEmptyMessage }}</p>
         </div>
       </section>
 
-      <section class="panel panel--resource">
-        <div class="list-head">
-          <div class="panel__head">
-            <h2 class="panel__title"><AppIcon name="resources" :size="20" />下一步可读内容</h2>
-            <p class="panel__desc">当你已经看清专业与课程关系后，可以从这些内容继续补足理解与练习。</p>
-          </div>
-          <div class="jump-links">
-            <RouterLink :to="{ name: 'resources' }">前往博习斋</RouterLink>
-          </div>
-        </div>
-
-        <div class="resource-grid">
-          <article v-for="item in resources" :key="item.id" class="resource-card">
-            <span class="resource-card__type">{{ item.type }}</span>
-            <h3>{{ item.name }}</h3>
-            <p>{{ item.description }}</p>
-          </article>
-        </div>
-      </section>
     </template>
 
     <div v-else class="empty">
-      <p>未找到对应的学科页面。</p>
+      <p>{{ loadError || '未找到对应的学科页面。' }}</p>
       <RouterLink :to="{ name: 'majors' }">返回学科览要</RouterLink>
     </div>
 
     <CourseModal
       v-if="showModal && selectedCourse"
       :course="selectedCourse"
+      :knowledge-points="selectedCourseKnowledgePoints"
+      :careers="selectedCourseCareers"
       @close="closeModal"
       @view-job="handleViewJob"
+      @view-career="handleViewCareer"
     />
-    <JobModal v-if="showJobModal && selectedJob" :job="selectedJob" @close="closeJobModal" />
   </div>
 </template>
 
@@ -379,8 +721,7 @@ function handleViewJob(name) {
   color: var(--text-muted);
 }
 
-.crumb a,
-.jump-links a {
+.crumb a {
   color: var(--brand-strong);
   text-decoration: none;
   font-weight: 600;
@@ -408,8 +749,7 @@ function handleViewJob(name) {
 
 .hero__tag,
 .course-type,
-.course-duration,
-.resource-card__type {
+.course-duration {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -449,7 +789,6 @@ function handleViewJob(name) {
 .panel__lead,
 .course-desc,
 .job-card__summary,
-.resource-card p,
 .focus-card p {
   margin: 0;
   line-height: 1.78;
@@ -636,12 +975,6 @@ function handleViewJob(name) {
   justify-content: space-between;
   gap: 1rem;
   align-items: flex-start;
-}
-
-.jump-links {
-  display: flex;
-  gap: 0.9rem;
-  flex-wrap: wrap;
 }
 
 .toolbar {
@@ -842,41 +1175,6 @@ function handleViewJob(name) {
   cursor: pointer;
 }
 
-.panel--resource {
-  background: rgba(250, 249, 245, 0.92);
-}
-
-.resource-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.9rem;
-}
-
-.resource-card {
-  padding: 1.1rem;
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.74);
-}
-
-.resource-card__type {
-  padding: 0.32rem 0.62rem;
-  font-size: 0.76rem;
-  font-weight: 700;
-  background: rgba(111, 149, 143, 0.12);
-  color: #567972;
-}
-
-.resource-card h3 {
-  margin: 0.8rem 0 0;
-  color: var(--text-strong);
-}
-
-.resource-card p {
-  margin-top: 0.7rem;
-  color: var(--text-main);
-}
-
 .list-empty,
 .empty {
   padding: 1.2rem;
@@ -884,6 +1182,11 @@ function handleViewJob(name) {
   border: 1px dashed var(--line-strong);
   background: rgba(255, 255, 255, 0.64);
   color: var(--text-main);
+}
+
+.list-empty p,
+.empty p {
+  margin: 0;
 }
 
 .empty a {
@@ -907,7 +1210,6 @@ function handleViewJob(name) {
 @media (max-width: 1080px) {
   .feature-grid,
   .course-grid,
-  .resource-grid,
   .focus-grid,
   .course-structure {
     grid-template-columns: 1fr;

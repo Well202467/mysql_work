@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.smartlearning.mapper.CareerMapper">
+
+    <select id="selectAll" resultType="com.example.smartlearning.entity.Career">
+        SELECT
+            id,
+            name,
+            category,
+            sort_order,
+            created_at,
+            updated_at
+        FROM career
+        ORDER BY sort_order, id
+    </select>
+
+    <select id="selectById" resultType="com.example.smartlearning.vo.CareerDetailVO">
+        SELECT
+            c.id,
+            c.name,
+            c.category,
+            c.sort_order,
+            c.created_at,
+            c.updated_at,
+            cp.id AS profile_id,
+            cp.intro,
+            cp.work_content,
+            cp.requirement,
+            cp.common_tech,
+            cp.suitable_major,
+            cp.development_path,
+            cp.source
+        FROM career c
+        LEFT JOIN career_profile cp ON cp.career_id = c.id
+        WHERE c.id = #{id}
+    </select>
+
+    <select id="selectCoursesByCareerId" resultType="com.example.smartlearning.vo.CareerCourseVO">
+        SELECT
+            c.id AS course_id,
+            c.name AS course_name,
+            c.description AS course_description,
+            cc.course_role,
+            cc.related_ability,
+            cc.related_points,
+            cc.importance,
+            cc.is_core,
+            cc.learning_stage
+        FROM career_course cc
+        JOIN course c ON cc.course_id = c.id
+        WHERE cc.career_id = #{careerId}
+        ORDER BY cc.is_core DESC, cc.learning_stage, cc.id
+    </select>
+
+    <select id="selectCareersByCourseId" resultType="com.example.smartlearning.vo.CourseCareerVO">
+        SELECT
+            c.id AS career_id,
+            c.name AS career_name,
+            c.category,
+            cc.course_role,
+            cc.related_ability,
+            cc.related_points,
+            cc.importance,
+            cc.is_core,
+            cc.learning_stage
+        FROM career_course cc
+        JOIN career c ON cc.career_id = c.id
+        WHERE cc.course_id = #{courseId}
+        ORDER BY cc.is_core DESC, cc.learning_stage, cc.id
+    </select>
+
+    <select id="selectAbilitiesByCareerId" resultType="com.example.smartlearning.vo.CareerAbilityVO">
+        SELECT
+            id,
+            career_id,
+            name,
+            description,
+            ability_type,
+            importance,
+            learning_advice
+        FROM career_ability
+        WHERE career_id = #{careerId}
+        ORDER BY id
+    </select>
+
+    <select id="selectKnowledgePointsByCareerId" resultType="com.example.smartlearning.vo.CareerKnowledgePointVO">
+        SELECT
+            ckp.id,
+            ckp.career_id,
+            ckp.course_id,
+            c.name AS course_name,
+            ckp.knowledge_point_id,
+            kp.name AS knowledge_point_name,
+            kp.description AS knowledge_point_description,
+            ckp.use_scene,
+            ckp.importance,
+            ckp.learning_advice,
+            ckp.source
+        FROM career_knowledge_point ckp
+        JOIN knowledge_point kp ON ckp.knowledge_point_id = kp.id
+        JOIN course c ON ckp.course_id = c.id
+        WHERE ckp.career_id = #{careerId}
+        ORDER BY ckp.importance DESC, ckp.id
+    </select>
+</mapper>

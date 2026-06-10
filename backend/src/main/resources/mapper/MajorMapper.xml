@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.smartlearning.mapper.MajorMapper">
+
+    <select id="selectAll" resultType="com.example.smartlearning.entity.Major">
+        SELECT
+            id,
+            name,
+            intro,
+            created_at,
+            updated_at
+        FROM major
+        ORDER BY id
+    </select>
+
+    <select id="selectById" resultType="com.example.smartlearning.entity.Major">
+        SELECT
+            id,
+            name,
+            intro
+        FROM major
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectCoursesByMajorId" resultType="com.example.smartlearning.vo.MajorCourseVO">
+        SELECT
+            c.id,
+            c.name,
+            c.description,
+            mc.type,
+            mc.credits
+        FROM major_course mc
+        JOIN course c ON mc.course_id = c.id
+        WHERE mc.major_id = #{majorId}
+        ORDER BY mc.type, mc.id
+    </select>
+</mapper>
